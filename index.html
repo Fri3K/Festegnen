@@ -70,8 +70,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);}
 
 <!-- Drive status bar -->
 <div id="driveBar">
-  <span id="driveStatus"><span class="dot-idle"></span>Logger ind med Google…</span>
-  <button id="driveLoginBtn" style="display:none" onclick="driveLogin()">Log ind</button>
+  <span id="driveStatus"><span class="dot-saving"></span>Henter data…</span>
   <button id="driveSaveBtn" class="secondary" style="display:none" onclick="driveSave()">Gem nu</button>
 </div>
 
@@ -121,13 +120,12 @@ body{font-family:var(--font-sans,system-ui,sans-serif);}
 </div>
 
 <script>
-// ===================== GOOGLE DRIVE INTEGRATION =====================
-// Data gemmes i en separat fil: festegnen_data.json (samme mappe i Drive)
-const CLIENT_ID='900318630473-0859548sgnns0ockousq1rn9asi51gu0.apps.googleusercontent.com';
-// Hosted at: https://Fri3K.github.io/festegnen
-const SCOPES='https://www.googleapis.com/auth/drive.file';
-const DATA_FILENAME='festegnen_data.json';
-let accessToken=null, dataFileId=null, saveTimeout=null;
+// ===================== GITHUB GEMNING =====================
+const GH_TOKEN='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';
+const GH_REPO='Fri3K/Festegnen';
+const GH_FILE='festegnen_data.json';
+const GH_API=`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`;
+let saveTimeout=null, fileSha=null;
 
 function setDriveStatus(html,showSave,showLogin){
   document.getElementById('driveStatus').innerHTML=html;
@@ -135,101 +133,55 @@ function setDriveStatus(html,showSave,showLogin){
   document.getElementById('driveLoginBtn').style.display=showLogin?'':'none';
 }
 
-function driveLogin(){
-  // Redirect-flow: virker på mobil og uden popup-tilladelse
-  const params=new URLSearchParams({
-    client_id:CLIENT_ID,
-    redirect_uri:window.location.origin+window.location.pathname,
-    response_type:'token',
-    scope:SCOPES,
-    prompt:'select_account',
-  });
-  window.location.href='https://accounts.google.com/o/oauth2/v2/auth?'+params.toString();
+function ghHeaders(){
+  return {
+    'Authorization':'Bearer '+GH_TOKEN,
+    'Content-Type':'application/json',
+    'Accept':'application/vnd.github+json',
+  };
 }
 
-// Find festegnen_data.json in Drive, or remember we need to create it on first save
-async function findOrCreateDataFile(){
+async function ghLoad(){
+  setDriveStatus('<span class="dot-saving"></span>Henter data…',false,false);
   try{
-    const r=await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=name='${DATA_FILENAME}'+and+trashed=false&fields=files(id,name)`,
-      {headers:{Authorization:'Bearer '+accessToken}}
-    );
-    const res=await r.json();
-    if(res.files&&res.files.length>0){
-      dataFileId=res.files[0].id;
+    const r=await fetch(GH_API,{headers:ghHeaders()});
+    if(r.status===404){
+      setDriveStatus('<span class="dot-saved"></span>Klar · ingen tidligere data',true,false);
+      return;
     }
-    // If not found, dataFileId stays null → first save will create it
-  }catch(e){/* ignore */}
-}
-
-async function driveLoad(){
-  if(!dataFileId){
-    setDriveStatus('<span class="dot-saved"></span>Logget ind – ingen tidligere data fundet',true,false);
-    return;
-  }
-  try{
-    const r=await fetch(
-      `https://www.googleapis.com/drive/v3/files/${dataFileId}?alt=media`,
-      {headers:{Authorization:'Bearer '+accessToken}}
-    );
-    const saved=await r.json();
+    const json=await r.json();
+    fileSha=json.sha;
+    const decoded=JSON.parse(atob(json.content.replace(/\n/g,'')));
     ['fri','sat'].forEach(day=>{
-      if(!saved[day])return;
-      saved[day].forEach((s,i)=>{
-        if(DATA[day][i])DATA[day][i].who=s.who||[];
-      });
+      if(!decoded[day])return;
+      decoded[day].forEach((s,i)=>{if(DATA[day][i])DATA[day][i].who=s.who||[];});
     });
     refreshAll();
-    setDriveStatus('<span class="dot-saved"></span>Data indlæst fra Drive · gemmer automatisk',true,false);
+    setDriveStatus('<span class="dot-saved"></span>Data indlæst · gemmer automatisk',true,false);
   }catch(e){
-    setDriveStatus('<span class="dot-idle"></span>Kunne ikke hente data – prøv igen',true,false);
+    setDriveStatus('<span class="dot-idle"></span>Fejl ved indlæsning: '+e.message,true,false);
   }
 }
 
-async function driveSave(){
-  if(!accessToken){setDriveStatus('<span class="dot-idle"></span>Ikke logget ind',false,true);return;}
+async function ghSave(){
   setDriveStatus('<span class="dot-saving"></span>Gemmer…',true,false);
   try{
-    const payload=JSON.stringify(
-      ['fri','sat'].reduce((acc,day)=>{
-        acc[day]=DATA[day].map(ev=>({who:ev.who}));
-        return acc;
-      },{})
-    );
-    const blob=new Blob([payload],{type:'application/json'});
-
-    let resp;
-    if(dataFileId){
-      // Update existing file
-      resp=await fetch(
-        `https://www.googleapis.com/upload/drive/v3/files/${dataFileId}?uploadType=media`,
-        {method:'PATCH',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:blob}
-      );
-    } else {
-      // Create new file with multipart (metadata + content)
-      const boundary='fg_boundary_x7';
-      const meta=JSON.stringify({name:DATA_FILENAME,mimeType:'application/json'});
-      const body=[
-        `--${boundary}`,
-        'Content-Type: application/json',
-        '',meta,
-        `--${boundary}`,
-        'Content-Type: application/json',
-        '',payload,
-        `--${boundary}--`
-      ].join('\r\n');
-      resp=await fetch(
-        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
-        {method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':`multipart/related; boundary=${boundary}`},body}
-      );
-      const created=await resp.json();
-      if(created.id){dataFileId=created.id;}
-    }
-    if(resp&&resp.ok){
+    const payload=JSON.stringify(['fri','sat'].reduce((acc,day)=>{
+      acc[day]=DATA[day].map(ev=>({who:ev.who}));return acc;
+    },{}));
+    const body={
+      message:'Opdater festegnen valg',
+      content:btoa(unescape(encodeURIComponent(payload))),
+    };
+    if(fileSha)body.sha=fileSha;
+    const r=await fetch(GH_API,{method:'PUT',headers:ghHeaders(),body:JSON.stringify(body)});
+    const json=await r.json();
+    if(r.ok){
+      fileSha=json.content.sha;
       const t=new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
       setDriveStatus('<span class="dot-saved"></span>Gemt '+t+' ✓',true,false);
-    } else {
-      setDriveStatus('<span class="dot-idle"></span>Fejl ved gemning',true,false);
+    }else{
+      setDriveStatus('<span class="dot-idle"></span>Fejl: '+JSON.stringify(json.message),true,false);
     }
   }catch(e){
     setDriveStatus('<span class="dot-idle"></span>Fejl: '+e.message,true,false);
@@ -237,33 +189,15 @@ async function driveSave(){
 }
 
 function scheduleSave(){
-  if(!accessToken)return;
   setDriveStatus('<span class="dot-saving"></span>Ikke-gemte ændringer…',true,false);
   clearTimeout(saveTimeout);
-  saveTimeout=setTimeout(driveSave,2000);
+  saveTimeout=setTimeout(ghSave,2000);
 }
 
-// Handle redirect callback: token is in URL hash after Google login
-function handleRedirectCallback(){
-  const hash=window.location.hash.substring(1);
-  const params=new URLSearchParams(hash);
-  if(params.get('access_token')){
-    accessToken=params.get('access_token');
-    // Clean URL
-    history.replaceState(null,'',window.location.pathname);
-    setDriveStatus('<span class="dot-saving"></span>Henter data…',false,false);
-    findOrCreateDataFile().then(driveLoad);
-    return true;
-  }
-  return false;
-}
+// Aliases so resten af koden virker uændret
+const driveSave=ghSave;
 
-window.addEventListener('load',()=>{
-  if(!handleRedirectCallback()){
-    // Not a callback – show login button
-    setDriveStatus('<span class="dot-idle"></span>Ikke logget ind',false,true);
-  }
-});
+window.addEventListener('load',()=>ghLoad());
 // ===================== END DRIVE INTEGRATION =====================
 
 const PEOPLE=['Helene','Julie','Magnus','Mick','Nina','Sophia','Thea'];
