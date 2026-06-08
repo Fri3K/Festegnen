@@ -176,12 +176,14 @@ async function ghSave(){
     if(fileSha)body.sha=fileSha;
     const r=await fetch(GH_API,{method:'PUT',headers:ghHeaders(),body:JSON.stringify(body)});
     const json=await r.json();
-    if(r.ok){
+    console.log('GitHub svar:', r.status, JSON.stringify(json).substring(0,300));
+    if(r.ok&&json.content&&json.content.sha){
       fileSha=json.content.sha;
       const t=new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
       setDriveStatus('<span class="dot-saved"></span>Gemt '+t+' ✓',true,false);
     }else{
-      setDriveStatus('<span class="dot-idle"></span>Fejl: '+JSON.stringify(json.message),true,false);
+      const msg=(json.message||JSON.stringify(json)).substring(0,80);
+      setDriveStatus('<span class="dot-idle"></span>Fejl '+r.status+': '+msg,true,false);
     }
   }catch(e){
     setDriveStatus('<span class="dot-idle"></span>Fejl: '+e.message,true,false);
