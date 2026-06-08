@@ -121,11 +121,11 @@ body{font-family:var(--font-sans,system-ui,sans-serif);}
 
 <script>
 // ===================== GITHUB GEMNING =====================
-const GH_TOKEN='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';
 const GH_REPO='Fri3K/Festegnen';
 const GH_FILE='festegnen_data.json';
 const GH_API=`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`;
 let saveTimeout=null, fileSha=null;
+let GH_TOKEN=localStorage.getItem('gh_token')||null;
 
 function setDriveStatus(html,showSave,showLogin){
   const s=document.getElementById('driveStatus');
@@ -142,25 +142,52 @@ function ghHeaders(){
   };
 }
 
+function promptToken(){
+  const t=prompt('Indtast dit GitHub Personal Access Token:');
+  if(t&&t.trim()){
+    GH_TOKEN=t.trim();
+    localStorage.setItem('gh_token',GH_TOKEN);
+    ghLoad();
+  }
+}
+
 async function ghLoad(){
+  if(!GH_TOKEN){
+    setDriveStatus('<span class="dot-idle"></span>Token mangler',true,false);
+    const sb=document.getElementById('driveSaveBtn');
+    if(sb){sb.textContent='Indtast token';sb.onclick=promptToken;sb.style.display='';}
+    return;
+  }
   setDriveStatus('<span class="dot-saving"></span>Henter data…',false,false);
   try{
     const r=await fetch(GH_API,{headers:ghHeaders()});
+    if(r.status===401){
+      localStorage.removeItem('gh_token');
+      GH_TOKEN=null;
+      setDriveStatus('<span class="dot-idle"></span>Token ugyldigt',true,false);
+      const sb=document.getElementById('driveSaveBtn');
+      if(sb){sb.textContent='Indtast token';sb.onclick=promptToken;sb.style.display='';}
+      return;
+    }
     if(r.status===404){
       setDriveStatus('<span class="dot-saved"></span>Klar · ingen tidligere data',true,false);
+      const sb=document.getElementById('driveSaveBtn');
+      if(sb){sb.textContent='Gem nu';sb.onclick=ghSave;}
       return;
     }
     const json=await r.json();
     fileSha=json.sha;
-    const decoded=JSON.parse(atob(json.content.replace(/\n/g,'')));
+    const decoded=JSON.parse(atob(json.content.replace(/[\n\r]/g,'')));
     ['fri','sat'].forEach(day=>{
       if(!decoded[day])return;
       decoded[day].forEach((s,i)=>{if(DATA[day][i])DATA[day][i].who=s.who||[];});
     });
     refreshAll();
     setDriveStatus('<span class="dot-saved"></span>Data indlæst · gemmer automatisk',true,false);
+    const sb=document.getElementById('driveSaveBtn');
+    if(sb){sb.textContent='Gem nu';sb.onclick=ghSave;}
   }catch(e){
-    setDriveStatus('<span class="dot-idle"></span>Fejl ved indlæsning: '+e.message,true,false);
+    setDriveStatus('<span class="dot-idle"></span>Fejl: '+e.message,true,false);
   }
 }
 
