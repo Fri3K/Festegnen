@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Festegnen 2026 – Tidslinje</title>
-<script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 <body>
 
@@ -125,6 +124,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);}
 // ===================== GOOGLE DRIVE INTEGRATION =====================
 // Data gemmes i en separat fil: festegnen_data.json (samme mappe i Drive)
 const CLIENT_ID='900318630473-0859548sgnns0ockousq1rn9asi51gu0.apps.googleusercontent.com';
+// Hosted at: https://Fri3K.github.io/festegnen
 const SCOPES='https://www.googleapis.com/auth/drive.file';
 const DATA_FILENAME='festegnen_data.json';
 let accessToken=null, dataFileId=null, saveTimeout=null;
@@ -136,18 +136,15 @@ function setDriveStatus(html,showSave,showLogin){
 }
 
 function driveLogin(){
-  const client=google.accounts.oauth2.initTokenClient({
+  // Redirect-flow: virker på mobil og uden popup-tilladelse
+  const params=new URLSearchParams({
     client_id:CLIENT_ID,
+    redirect_uri:window.location.origin+window.location.pathname,
+    response_type:'token',
     scope:SCOPES,
-    callback:async(resp)=>{
-      if(resp.error){setDriveStatus('<span class="dot-idle"></span>Log ind mislykkedes',false,true);return;}
-      accessToken=resp.access_token;
-      setDriveStatus('<span class="dot-saving"></span>Henter data…',false,false);
-      await findOrCreateDataFile();
-      await driveLoad();
-    }
+    prompt:'select_account',
   });
-  client.requestAccessToken();
+  window.location.href='https://accounts.google.com/o/oauth2/v2/auth?'+params.toString();
 }
 
 // Find festegnen_data.json in Drive, or remember we need to create it on first save
@@ -246,14 +243,26 @@ function scheduleSave(){
   saveTimeout=setTimeout(driveSave,2000);
 }
 
+// Handle redirect callback: token is in URL hash after Google login
+function handleRedirectCallback(){
+  const hash=window.location.hash.substring(1);
+  const params=new URLSearchParams(hash);
+  if(params.get('access_token')){
+    accessToken=params.get('access_token');
+    // Clean URL
+    history.replaceState(null,'',window.location.pathname);
+    setDriveStatus('<span class="dot-saving"></span>Henter data…',false,false);
+    findOrCreateDataFile().then(driveLoad);
+    return true;
+  }
+  return false;
+}
+
 window.addEventListener('load',()=>{
-  setTimeout(()=>{
-    if(typeof google!=='undefined'&&google.accounts){
-      driveLogin();
-    } else {
-      setDriveStatus('<span class="dot-idle"></span>Google ikke indlæst',false,true);
-    }
-  },800);
+  if(!handleRedirectCallback()){
+    // Not a callback – show login button
+    setDriveStatus('<span class="dot-idle"></span>Ikke logget ind',false,true);
+  }
 });
 // ===================== END DRIVE INTEGRATION =====================
 
