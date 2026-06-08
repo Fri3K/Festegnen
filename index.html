@@ -243,11 +243,15 @@ const STAGES=['live','dj360','viel','bodega'];
 const STAGE_LABELS=['Live Stage','360 DJ Stage','Vi Elsker Stage','Bodega Royal'];
 const TIME_W=52,STAGE_W=108,PAUSE_W=56,GAP=4,HDR_H=32,PPM=1.7;
 
-function stageX(si){return TIME_W+GAP+si*(STAGE_W+GAP);}
-function pauseX(){return TIME_W+GAP+4*(STAGE_W+GAP);}
+function stageX(si){
+  // Pause er placeret mellem scene 1 og 2, så scene 2+3 forskydes
+  const base=TIME_W+GAP+si*(STAGE_W+GAP);
+  return si>=2?base+PAUSE_W+GAP:base;
+}
+function pauseX(){return TIME_W+GAP+2*(STAGE_W+GAP);}
 function stageCX(si){return stageX(si)+STAGE_W/2;}
 function pauseCX(){return pauseX()+PAUSE_W/2;}
-function totalW(){return pauseX()+PAUSE_W+4;}
+function totalW(){return stageX(3)+STAGE_W+4;}
 function tY(t,minT){return HDR_H+(t-minT)*60*PPM;}
 function fmtTime(t){const h=Math.floor(t);const m=Math.round((t%1)*60);return h.toString().padStart(2,'0')+':'+(m).toString().padStart(2,'0');}
 
@@ -595,12 +599,18 @@ function render(){
   const gridColor=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.07)';
   const textMuted=isDark?'rgba(255,255,255,0.4)':'rgba(0,0,0,0.4)';
   ctx.fillStyle=bgColor;ctx.fillRect(0,0,canvasW,canvasH);
-  [...STAGES,'pause'].forEach((s,i)=>{
-    const x=i<4?stageX(i):pauseX(),w=i<4?STAGE_W:PAUSE_W;
-    const col=i<4?STAGE_COLORS[s]:STAGE_COLORS.pause;
+  // Header: live, dj360, pause, viel, bodega
+  const headerCols=[
+    {x:stageX(0),w:STAGE_W,col:STAGE_COLORS.live,label:STAGE_LABELS[0]},
+    {x:stageX(1),w:STAGE_W,col:STAGE_COLORS.dj360,label:STAGE_LABELS[1]},
+    {x:pauseX(),w:PAUSE_W,col:STAGE_COLORS.pause,label:'Pause'},
+    {x:stageX(2),w:STAGE_W,col:STAGE_COLORS.viel,label:STAGE_LABELS[2]},
+    {x:stageX(3),w:STAGE_W,col:STAGE_COLORS.bodega,label:STAGE_LABELS[3]},
+  ];
+  headerCols.forEach(({x,w,col,label})=>{
     ctx.fillStyle=col.hdr;roundRect(ctx,x,0,w,HDR_H-4,5);ctx.fill();
     ctx.fillStyle='#fff';ctx.font='500 10px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(i<4?STAGE_LABELS[i]:'Pause',x+w/2,HDR_H/2-2,w-6);
+    ctx.fillText(label,x+w/2,HDR_H/2-2,w-6);
   });
   for(let h=minT;h<=maxT;h++){
     const y=tY(h,minT);
