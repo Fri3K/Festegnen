@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Festegnen 2026 – Tidslinje</title>
+<script src="https://accounts.google.com/gsi/client" async></script>
+</head>
+<body>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-sans,system-ui,sans-serif);}
+.wrap{padding:1rem 0;}
+.day-tabs{display:flex;gap:8px;margin-bottom:1rem;}
+.day-tab{padding:7px 18px;border:0.5px solid #ccc;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:#555;background:#fff;}
+.day-tab.active{background:#185FA5;color:#E6F1FB;border-color:#185FA5;}
+.top-row{display:flex;gap:12px;align-items:center;margin-bottom:1rem;flex-wrap:wrap;}
+.person-filters{display:flex;flex-wrap:wrap;gap:6px;flex:1;}
+.person-btn{padding:4px 12px;border-radius:20px;border:1.5px solid #ccc;cursor:pointer;font-size:12px;background:#fff;color:#555;}
+.person-btn.on{color:#fff;}
+.edit-toggle{padding:6px 14px;border-radius:8px;border:0.5px solid #ccc;cursor:pointer;font-size:12px;font-weight:500;background:#f5f5f5;color:#555;white-space:nowrap;}
+.edit-toggle.active{background:#185FA5;color:#fff;border-color:#185FA5;}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:.5rem;font-size:11px;color:#777;}
+.leg-item{display:flex;align-items:center;gap:4px;}
+.leg-dot{width:9px;height:9px;border-radius:2px;}
+.tl-hint{font-size:11px;color:#777;margin-bottom:.5rem;}
+.conflict-banner{margin-bottom:.75rem;background:#FEF3E2;border:0.5px solid #F5A623;border-radius:8px;padding:.6rem .85rem;display:none;}
+.conflict-banner h4{font-size:12px;font-weight:500;color:#BA7517;margin-bottom:.35rem;}
+.conflict-item{font-size:11px;color:#BA7517;padding:2px 0;display:flex;align-items:flex-start;gap:6px;}
+.conflict-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:2px;}
+.tl-outer{overflow-x:auto;}
+.editor{margin-top:1.25rem;border:0.5px solid #ddd;border-radius:10px;overflow:hidden;}
+.editor-header{padding:.75rem 1rem;background:#f8f8f8;border-bottom:0.5px solid #ddd;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.editor-header h3{font-size:13px;font-weight:500;color:#222;}
+.editor-stage-tabs{display:flex;gap:6px;flex-wrap:wrap;}
+.est{padding:4px 10px;border-radius:8px;border:0.5px solid #ccc;cursor:pointer;font-size:11px;font-weight:500;background:#fff;color:#555;}
+.est.active{color:#fff;}
+.editor-body{padding:.75rem 1rem;max-height:340px;overflow-y:auto;}
+.artist-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:0.5px solid #eee;}
+.artist-row:last-child{border-bottom:none;}
+.artist-row.conflict-row{background:rgba(186,115,23,0.07);border-radius:4px;padding-left:4px;}
+.conflict-icon{font-size:12px;flex-shrink:0;}
+.artist-name{font-size:12px;color:#222;flex:1;min-width:0;}
+.artist-time{font-size:11px;color:#777;white-space:nowrap;margin-right:2px;}
+.person-check{width:20px;height:20px;border-radius:50%;border:1.5px solid;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;transition:background .12s;position:relative;}
+.person-check.checked{color:#fff;}
+.person-check.conflict-check::after{content:'';position:absolute;top:-3px;right:-3px;width:7px;height:7px;border-radius:50%;background:#E24B4A;border:1px solid #fff;}
+.popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center;}
+.popup{background:#fff;border-radius:10px;border:0.5px solid #ccc;padding:1.25rem;width:340px;max-width:92vw;}
+.popup-title{font-size:14px;font-weight:500;color:#222;margin-bottom:2px;}
+.popup-sub{font-size:11px;color:#777;margin-bottom:.75rem;}
+.popup-conflict{font-size:11px;color:#BA7517;background:#FEF3E2;border-radius:8px;padding:.4rem .6rem;margin-bottom:.85rem;display:none;}
+.popup-people{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1.25rem;}
+.popup-person{padding:5px 12px;border-radius:20px;border:1.5px solid;cursor:pointer;font-size:12px;font-weight:500;position:relative;}
+.popup-person.checked{color:#fff;}
+.popup-person.unchecked{background:transparent;}
+.popup-person.conflict-person::after{content:'⚠';position:absolute;top:-6px;right:-4px;font-size:10px;}
+.popup-close{width:100%;padding:7px;border-radius:8px;border:0.5px solid #ccc;background:#f5f5f5;cursor:pointer;font-size:13px;color:#222;}
+
+/* Drive status bar */
+#driveBar{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f0f6ff;border:0.5px solid #c5d9f5;border-radius:8px;margin-bottom:.75rem;font-size:11px;color:#1a56a0;flex-wrap:wrap;}
+#driveBar button{padding:3px 10px;border-radius:6px;border:0.5px solid #185FA5;background:#185FA5;color:#fff;cursor:pointer;font-size:11px;font-weight:500;}
+#driveBar button.secondary{background:#fff;color:#185FA5;}
+#driveStatus{flex:1;min-width:120px;}
+.dot-saving{display:inline-block;width:7px;height:7px;border-radius:50%;background:#f0a500;margin-right:4px;animation:pulse .8s infinite;}
+.dot-saved{display:inline-block;width:7px;height:7px;border-radius:50%;background:#1a9e5c;margin-right:4px;}
+.dot-idle{display:inline-block;width:7px;height:7px;border-radius:50%;background:#aaa;margin-right:4px;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+</style>
+
+<!-- Drive status bar -->
+<div id="driveBar">
+  <span id="driveStatus"><span class="dot-idle"></span>Logger ind med Google…</span>
+  <button id="driveLoginBtn" style="display:none" onclick="driveLogin()">Log ind</button>
+  <button id="driveSaveBtn" class="secondary" style="display:none" onclick="driveSave()">Gem nu</button>
+</div>
+
+<div class="wrap">
+<h2 style="position:absolute;width:1px;height:1px;overflow:hidden">Festegnen 2026 – tidslinje</h2>
+<div class="day-tabs">
+  <button class="day-tab active" onclick="setDay('fri')">Fredag 19. juni</button>
+  <button class="day-tab" onclick="setDay('sat')">Lørdag 20. juni</button>
+</div>
+<div class="top-row">
+  <div class="person-filters" id="pfilters"></div>
+  <button class="edit-toggle" id="editToggle" onclick="toggleEditor()">✏ Rediger valg</button>
+</div>
+<div class="legend">
+  <span class="leg-item"><span class="leg-dot" style="background:#D85A30"></span>Live Stage</span>
+  <span class="leg-item"><span class="leg-dot" style="background:#185FA5"></span>360 DJ Stage</span>
+  <span class="leg-item"><span class="leg-dot" style="background:#D4537E"></span>Vi Elsker</span>
+  <span class="leg-item"><span class="leg-dot" style="background:#BA7517"></span>Bodega Royal</span>
+  <span class="leg-item"><span class="leg-dot" style="background:#888780"></span>Pause</span>
+  <span class="leg-item"><span class="leg-dot" style="background:#E24B4A;border:1px solid #F09595"></span>Konflikt</span>
+</div>
+<div class="conflict-banner" id="conflictBanner">
+  <h4>⚠ Konflikter i programmet</h4>
+  <div id="conflictList"></div>
+</div>
+<p class="tl-hint">👆 Klik på en artist for at redigere · <span style="color:#E24B4A">⚠ rød markering = konflikt</span></p>
+<div class="tl-outer"><canvas id="cv"></canvas></div>
+<div id="editorWrap" style="display:none;">
+  <div class="editor">
+    <div class="editor-header">
+      <h3>Rediger artistvalg</h3>
+      <div class="editor-stage-tabs" id="stageTabs"></div>
+    </div>
+    <div class="editor-body" id="editorBody"></div>
+  </div>
+</div>
+</div>
+
+<div class="popup-overlay" id="popupOverlay" style="display:none;" onclick="closePopup(event)">
+  <div class="popup" id="popupBox">
+    <div class="popup-title" id="popupTitle"></div>
+    <div class="popup-sub" id="popupSub"></div>
+    <div class="popup-conflict" id="popupConflict"></div>
+    <div class="popup-people" id="popupPeople"></div>
+    <button class="popup-close" onclick="closePopupDirect()">Luk</button>
+  </div>
+</div>
+
+<script>
+// ===================== GOOGLE DRIVE INTEGRATION =====================
+// Data gemmes i en separat fil: festegnen_data.json (samme mappe i Drive)
+const CLIENT_ID='900318630473-0859548sgnns0ockousq1rn9asi51gu0.apps.googleusercontent.com';
+const SCOPES='https://www.googleapis.com/auth/drive.file';
+const DATA_FILENAME='festegnen_data.json';
+let accessToken=null, dataFileId=null, saveTimeout=null;
+
+function setDriveStatus(html,showSave,showLogin){
+  document.getElementById('driveStatus').innerHTML=html;
+  document.getElementById('driveSaveBtn').style.display=showSave?'':'none';
+  document.getElementById('driveLoginBtn').style.display=showLogin?'':'none';
+}
+
+function driveLogin(){
+  const client=google.accounts.oauth2.initTokenClient({
+    client_id:CLIENT_ID,
+    scope:SCOPES,
+    callback:async(resp)=>{
+      if(resp.error){setDriveStatus('<span class="dot-idle"></span>Log ind mislykkedes',false,true);return;}
+      accessToken=resp.access_token;
+      setDriveStatus('<span class="dot-saving"></span>Henter data…',false,false);
+      await findOrCreateDataFile();
+      await driveLoad();
+    }
+  });
+  client.requestAccessToken();
+}
+
+// Find festegnen_data.json in Drive, or remember we need to create it on first save
+async function findOrCreateDataFile(){
+  try{
+    const r=await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${DATA_FILENAME}'+and+trashed=false&fields=files(id,name)`,
+      {headers:{Authorization:'Bearer '+accessToken}}
+    );
+    const res=await r.json();
+    if(res.files&&res.files.length>0){
+      dataFileId=res.files[0].id;
+    }
+    // If not found, dataFileId stays null → first save will create it
+  }catch(e){/* ignore */}
+}
+
+async function driveLoad(){
+  if(!dataFileId){
+    setDriveStatus('<span class="dot-saved"></span>Logget ind – ingen tidligere data fundet',true,false);
+    return;
+  }
+  try{
+    const r=await fetch(
+      `https://www.googleapis.com/drive/v3/files/${dataFileId}?alt=media`,
+      {headers:{Authorization:'Bearer '+accessToken}}
+    );
+    const saved=await r.json();
+    ['fri','sat'].forEach(day=>{
+      if(!saved[day])return;
+      saved[day].forEach((s,i)=>{
+        if(DATA[day][i])DATA[day][i].who=s.who||[];
+      });
+    });
+    refreshAll();
+    setDriveStatus('<span class="dot-saved"></span>Data indlæst fra Drive · gemmer automatisk',true,false);
+  }catch(e){
+    setDriveStatus('<span class="dot-idle"></span>Kunne ikke hente data – prøv igen',true,false);
+  }
+}
+
+async function driveSave(){
+  if(!accessToken){setDriveStatus('<span class="dot-idle"></span>Ikke logget ind',false,true);return;}
+  setDriveStatus('<span class="dot-saving"></span>Gemmer…',true,false);
+  try{
+    const payload=JSON.stringify(
+      ['fri','sat'].reduce((acc,day)=>{
+        acc[day]=DATA[day].map(ev=>({who:ev.who}));
+        return acc;
+      },{})
+    );
+    const blob=new Blob([payload],{type:'application/json'});
+
+    let resp;
+    if(dataFileId){
+      // Update existing file
+      resp=await fetch(
+        `https://www.googleapis.com/upload/drive/v3/files/${dataFileId}?uploadType=media`,
+        {method:'PATCH',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:blob}
+      );
+    } else {
+      // Create new file with multipart (metadata + content)
+      const boundary='fg_boundary_x7';
+      const meta=JSON.stringify({name:DATA_FILENAME,mimeType:'application/json'});
+      const body=[
+        `--${boundary}`,
+        'Content-Type: application/json',
+        '',meta,
+        `--${boundary}`,
+        'Content-Type: application/json',
+        '',payload,
+        `--${boundary}--`
+      ].join('\r\n');
+      resp=await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+        {method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':`multipart/related; boundary=${boundary}`},body}
+      );
+      const created=await resp.json();
+      if(created.id){dataFileId=created.id;}
+    }
+    if(resp&&resp.ok){
+      const t=new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
+      setDriveStatus('<span class="dot-saved"></span>Gemt '+t+' ✓',true,false);
+    } else {
+      setDriveStatus('<span class="dot-idle"></span>Fejl ved gemning',true,false);
+    }
+  }catch(e){
+    setDriveStatus('<span class="dot-idle"></span>Fejl: '+e.message,true,false);
+  }
+}
+
+function scheduleSave(){
+  if(!accessToken)return;
+  setDriveStatus('<span class="dot-saving"></span>Ikke-gemte ændringer…',true,false);
+  clearTimeout(saveTimeout);
+  saveTimeout=setTimeout(driveSave,2000);
+}
+
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    if(typeof google!=='undefined'&&google.accounts){
+      driveLogin();
+    } else {
+      setDriveStatus('<span class="dot-idle"></span>Google ikke indlæst',false,true);
+    }
+  },800);
+});
+// ===================== END DRIVE INTEGRATION =====================
+
+const PEOPLE=['Helene','Julie','Magnus','Mick','Nina','Sophia','Thea'];
+const COLORS=['#7F77DD','#1D9E75','#D85A30','#378ADD','#D4537E','#BA7517','#888780'];
+const STAGE_COLORS={
+  live:  {fill:'#FAECE7',stroke:'#F0997B',text:'#993C1D',hdr:'#D85A30'},
+  dj360: {fill:'#E6F1FB',stroke:'#85B7EB',text:'#185FA5',hdr:'#185FA5'},
+  viel:  {fill:'#FBEAF0',stroke:'#ED93B1',text:'#993556',hdr:'#D4537E'},
+  bodega:{fill:'#FAEEDA',stroke:'#EF9F27',text:'#854F0B',hdr:'#BA7517'},
+  pause: {hdr:'#888780'},
+};
+const STAGES=['live','dj360','viel','bodega'];
+const STAGE_LABELS=['Live Stage','360 DJ Stage','Vi Elsker Stage','Bodega Royal'];
+const TIME_W=52,STAGE_W=108,PAUSE_W=56,GAP=4,HDR_H=32,PPM=1.7;
+
+function stageX(si){return TIME_W+GAP+si*(STAGE_W+GAP);}
+function pauseX(){return TIME_W+GAP+4*(STAGE_W+GAP);}
+function stageCX(si){return stageX(si)+STAGE_W/2;}
+function pauseCX(){return pauseX()+PAUSE_W/2;}
+function totalW(){return pauseX()+PAUSE_W+4;}
+function tY(t,minT){return HDR_H+(t-minT)*60*PPM;}
+function fmtTime(t){const h=Math.floor(t);const m=Math.round((t%1)*60);return h.toString().padStart(2,'0')+':'+(m).toString().padStart(2,'0');}
+
+const DATA={
+  fri:[
+    {stage:'live',name:'Bedstegnen Awards',start:14.5,end:15,who:[]},
+    {stage:'live',name:'Grand Prix Show',start:15,end:16.25,who:['Helene']},
+    {stage:'live',name:'Infernal',start:17.25,end:18.42,who:['Helene','Julie','Magnus','Mick','Nina','Sophia']},
+    {stage:'live',name:'Ude af Kontrol',start:19.33,end:20.58,who:['Magnus']},
+    {stage:'live',name:'Black Eyed Peas',start:21.83,end:23.08,who:['Helene','Julie','Magnus','Mick','Nina','Sophia']},
+    {stage:'dj360',name:'Jaxstyle',start:16.25,end:17.17,who:[]},
+    {stage:'dj360',name:'Sigala',start:18.5,end:19.25,who:[]},
+    {stage:'dj360',name:'Paul Van Dyk',start:20.67,end:21.67,who:[]},
+    {stage:'dj360',name:'ATB',start:23.17,end:23.92,who:['Helene','Magnus','Sophia']},
+    {stage:'viel',name:'DJ Wallin',start:14,end:15,who:[]},
+    {stage:'viel',name:'Outlandish',start:15,end:15.5,who:['Julie']},
+    {stage:'viel',name:'DJ Rosé',start:15.5,end:16.25,who:[]},
+    {stage:'viel',name:'Vengaboys',start:16.25,end:16.67,who:['Helene','Julie','Magnus','Mick','Nina','Sophia']},
+    {stage:'viel',name:'Lasgo',start:16.75,end:17.08,who:['Helene','Julie','Magnus','Mick','Nina','Sophia']},
+    {stage:'viel',name:'DJ Skoge',start:17.08,end:17.58,who:['Magnus','Mick','Sophia']},
+    {stage:'viel',name:'DJ Renter',start:17.67,end:18.17,who:[]},
+    {stage:'viel',name:'Barcode Brothers',start:18.58,end:19,who:['Helene','Julie','Magnus','Mick','Nina','Sophia']},
+    {stage:'viel',name:'DJ Søren Haahr',start:19.08,end:19.5,who:[]},
+    {stage:'viel',name:'Dee Dee',start:19.58,end:19.83,who:['Helene','Magnus']},
+    {stage:'viel',name:'Basshunter',start:19.92,end:20.42,who:['Helene','Julie','Mick','Nina','Sophia']},
+    {stage:'viel',name:'Sylver',start:20.5,end:20.83,who:['Magnus']},
+    {stage:'viel',name:'Danzel',start:20.92,end:21.25,who:[]},
+    {stage:'viel',name:'Paul Elstak',start:21.33,end:22.08,who:[]},
+    {stage:'viel',name:'Ian Van Dahl',start:22.5,end:22.92,who:['Magnus']},
+    {stage:'viel',name:'Pede B',start:23,end:23.58,who:[]},
+    {stage:'viel',name:'Dante Thomas',start:23.58,end:23.92,who:[]},
+    {stage:'bodega',name:'Bodega Bangers & Rafling',start:15,end:16,who:[]},
+    {stage:'bodega',name:'Jørgen De Mylius',start:16.25,end:17.25,who:[]},
+    {stage:'bodega',name:'Harske Hubbi',start:17.5,end:18.5,who:['Helene','Magnus','Mick','Sophia']},
+    {stage:'bodega',name:'Christian Brøns',start:19,end:19.75,who:['Helene','Julie']},
+    {stage:'bodega',name:'Karaoke m. Tigeren & André',start:19.83,end:20.83,who:[]},
+    {stage:'bodega',name:'Rasmus Bjerg',start:21,end:22.25,who:[]},
+    {stage:'bodega',name:'Tommy Seeman Band',start:22.75,end:23.75,who:[]},
+  ],
+  sat:[
+    {stage:'live',name:'Berg, Olivver & Omar',start:12.92,end:13.92,who:[]},
+    {stage:'live',name:'Ankerstjerne',start:15,end:16.25,who:[]},
+    {stage:'live',name:'John Martin',start:17.25,end:18,who:[]},
+    {stage:'live',name:'Faithless',start:19.5,end:20.75,who:['Helene','Magnus']},
+    {stage:'live',name:'Scooter',start:22,end:23.17,who:['Helene','Julie','Magnus','Nina','Sophia']},
+    {stage:'dj360',name:'DJ 4Gaard',start:11,end:12,who:[]},
+    {stage:'dj360',name:'Laidback Luke',start:14.08,end:14.83,who:[]},
+    {stage:'dj360',name:'Darude',start:16.33,end:17.08,who:['Helene','Julie','Magnus','Nina','Sophia']},
+    {stage:'dj360',name:'Kato',start:18.58,end:19.33,who:['Helene','Julie','Magnus','Nina','Sophia']},
+    {stage:'dj360',name:'Armand Van Helden',start:20.83,end:21.83,who:[]},
+    {stage:'dj360',name:'Faustix',start:23.25,end:23.92,who:['Julie']},
+    {stage:'viel',name:'Playliste',start:11,end:11.5,who:[]},
+    {stage:'viel',name:'DJ Renter',start:11.5,end:12,who:[]},
+    {stage:'viel',name:'Mr. President',start:12,end:12.33,who:['Helene','Magnus','Nina','Sophia']},
+    {stage:'viel',name:'Daisy Dee – Technotronic',start:12.42,end:12.75,who:['Magnus']},
+    {stage:'viel',name:'Østkyst Hustlers',start:13.17,end:13.92,who:['Helene','Julie']},
+    {stage:'viel',name:'O-Zone',start:14.08,end:14.42,who:['Helene','Julie','Magnus','Nina','Sophia']},
+    {stage:'viel',name:'Blå Øjne & Drömhus',start:14.5,end:15.08,who:['Helene']},
+    {stage:'viel',name:'Snow',start:15.25,end:15.5,who:['Helene']},
+    {stage:'viel',name:'Natalie Imbruglia',start:16,end:16.5,who:['Helene','Julie','Magnus','Sophia']},
+    {stage:'viel',name:'Sophie Ellis-Bextor',start:16.75,end:17.25,who:['Helene','Julie','Magnus','Sophia']},
+    {stage:'viel',name:'Giorgio Prezioso',start:17.33,end:18,who:[]},
+    {stage:'viel',name:'8Ball',start:18,end:18.58,who:[]},
+    {stage:'viel',name:'Svenstrup & Vendelboe + DJ Encore & Nadia Malm',start:18.75,end:19.17,who:['Julie','Magnus','Sophia']},
+    {stage:'viel',name:'Snap!',start:19.25,end:19.58,who:['Helene','Magnus','Nina']},
+    {stage:'viel',name:'Loona',start:19.67,end:20,who:['Julie','Magnus']},
+    {stage:'viel',name:'Dario Von Slutty',start:20.17,end:20.5,who:['Julie','Magnus']},
+    {stage:'viel',name:'Italobrothers',start:20.5,end:21,who:['Helene','Julie','Magnus','Nina','Sophia']},
+    {stage:'viel',name:'Bro',start:21.08,end:21.5,who:[]},
+    {stage:'viel',name:'DJ 4Gaard',start:21.5,end:21.92,who:[]},
+    {stage:'viel',name:'DJ Søren Haahr',start:21.92,end:22.33,who:[]},
+    {stage:'viel',name:'Hampenberg × Alexander Brown × Yepha',start:22.67,end:23.25,who:['Helene','Julie','Magnus','Nina','Sophia']},
+    {stage:'viel',name:'Cascada',start:23.33,end:23.92,who:['Helene','Julie','Magnus','Nina','Sophia']},
+    {stage:'bodega',name:'Faxe Kondi Bingo',start:12.5,end:13.75,who:[]},
+    {stage:'bodega',name:'Ekspressen',start:14,end:15,who:[]},
+    {stage:'bodega',name:'Pub Quiz (André Bentsen)',start:16,end:17,who:[]},
+    {stage:'bodega',name:'Tommy Seeman Band',start:17.5,end:19,who:[]},
+    {stage:'bodega',name:'Clemens',start:19.75,end:20.08,who:[]},
+    {stage:'bodega',name:'Karaoke m. Tigeren & André',start:20.17,end:21.5,who:[]},
+    {stage:'bodega',name:"80'er Disco m. DJ Amondsen",start:22,end:23,who:[]},
+  ]
+};
+
+let currentDay='fri', activePersons=new Set(PEOPLE), editorOpen=false, editorStage='live';
+let hitBoxes=[], popupEventIndex=null;
+
+function getConflicts(day){
+  const data=DATA[day];
+  const conflicts={};
+  PEOPLE.forEach(p=>{
+    const shows=data.filter(e=>e.who.includes(p)).sort((a,b)=>a.start-b.start);
+    for(let i=0;i<shows.length;i++){
+      for(let j=i+1;j<shows.length;j++){
+        if(shows[j].start<shows[i].end-0.01){
+          if(!conflicts[p])conflicts[p]=[];
+          conflicts[p].push({a:shows[i],b:shows[j]});
+        }
+      }
+    }
+  });
+  return conflicts;
+}
+function getConflictIndices(day){
+  const data=DATA[day];
+  const conflicts=getConflicts(day);
+  const conflictPersons={};
+  Object.entries(conflicts).forEach(([person,pairs])=>{
+    pairs.forEach(({a,b})=>{
+      const ia=data.indexOf(a),ib=data.indexOf(b);
+      if(!conflictPersons[ia])conflictPersons[ia]=new Set();
+      if(!conflictPersons[ib])conflictPersons[ib]=new Set();
+      conflictPersons[ia].add(person);
+      conflictPersons[ib].add(person);
+    });
+  });
+  return conflictPersons;
+}
+
+function updateConflictBanner(){
+  const conflicts=getConflicts(currentDay);
+  const banner=document.getElementById('conflictBanner');
+  const list=document.getElementById('conflictList');
+  const entries=Object.entries(conflicts).filter(([,pairs])=>pairs.length>0);
+  if(!entries.length){banner.style.display='none';return;}
+  banner.style.display='block';
+  list.innerHTML='';
+  entries.forEach(([person,pairs])=>{
+    const idx=PEOPLE.indexOf(person);
+    pairs.forEach(({a,b})=>{
+      const div=document.createElement('div');
+      div.className='conflict-item';
+      div.innerHTML=`<span class="conflict-dot" style="background:${COLORS[idx]}"></span><span><strong>${person}:</strong> ${a.name} (${fmtTime(a.start)}–${fmtTime(a.end)}) og ${b.name} (${fmtTime(b.start)}–${fmtTime(b.end)}) overlapper</span>`;
+      list.appendChild(div);
+    });
+  });
+}
+
+function buildFilters(){
+  const c=document.getElementById('pfilters');c.innerHTML='';
+  PEOPLE.forEach((p,i)=>{
+    const b=document.createElement('button');
+    b.className='person-btn on';b.dataset.name=p;
+    b.style.cssText=`background:${COLORS[i]};border-color:${COLORS[i]};color:#fff;`;
+    b.textContent=p;b.onclick=()=>togglePerson(p);c.appendChild(b);
+  });
+}
+function togglePerson(name){
+  if(activePersons.has(name))activePersons.delete(name);else activePersons.add(name);
+  document.querySelectorAll('.person-btn').forEach(b=>{
+    if(b.dataset.name===name){
+      const on=activePersons.has(name),idx=PEOPLE.indexOf(name);
+      b.classList.toggle('on',on);
+      b.style.background=on?COLORS[idx]:'#fff';
+      b.style.borderColor=on?COLORS[idx]:'#ccc';
+      b.style.color=on?'#fff':'#555';
+    }
+  });
+  render();
+}
+
+function setDay(d){
+  currentDay=d;
+  document.querySelectorAll('.day-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&d==='fri')||(i===1&&d==='sat')));
+  if(editorOpen){buildEditorTabs();}
+  render();
+}
+
+function toggleEditor(){
+  editorOpen=!editorOpen;
+  document.getElementById('editorWrap').style.display=editorOpen?'block':'none';
+  document.getElementById('editToggle').classList.toggle('active',editorOpen);
+  if(editorOpen)buildEditorTabs();
+}
+function buildEditorTabs(){
+  const tb=document.getElementById('stageTabs');tb.innerHTML='';
+  STAGES.forEach((s,i)=>{
+    const b=document.createElement('button');
+    b.className='est'+(s===editorStage?' active':'');
+    if(s===editorStage)b.style.cssText=`background:${STAGE_COLORS[s].hdr};border-color:${STAGE_COLORS[s].hdr};color:#fff;`;
+    b.textContent=STAGE_LABELS[i];
+    b.onclick=()=>{editorStage=s;buildEditorTabs();};
+    tb.appendChild(b);
+  });
+  buildEditor();
+}
+function buildEditor(){
+  const body=document.getElementById('editorBody');body.innerHTML='';
+  const data=DATA[currentDay];
+  const conflictPersons=getConflictIndices(currentDay);
+  const events=data.filter(e=>e.stage===editorStage).sort((a,b)=>a.start-b.start);
+  events.forEach(ev=>{
+    const idx=data.indexOf(ev);
+    const evConflicts=conflictPersons[idx]||new Set();
+    const hasConflict=evConflicts.size>0;
+    const row=document.createElement('div');
+    row.className='artist-row'+(hasConflict?' conflict-row':'');
+    if(hasConflict){
+      const ic=document.createElement('span');ic.className='conflict-icon';ic.textContent='⚠';ic.style.color='#E24B4A';row.appendChild(ic);
+    }
+    const nm=document.createElement('div');nm.className='artist-name';nm.textContent=ev.name;
+    const tm=document.createElement('div');tm.className='artist-time';
+    tm.textContent=fmtTime(ev.start)+'–'+fmtTime(ev.end);
+    row.appendChild(nm);row.appendChild(tm);
+    PEOPLE.forEach((p,pi)=>{
+      const checked=ev.who.includes(p);
+      const isConflict=evConflicts.has(p);
+      const btn=document.createElement('div');
+      btn.className='person-check'+(checked?' checked':' unchecked')+(isConflict?' conflict-check':'');
+      btn.title=p+(isConflict?' (konflikt!)':'');
+      btn.style.cssText=`border-color:${COLORS[pi]};background:${checked?COLORS[pi]:'transparent'};color:${checked?'#fff':COLORS[pi]};`;
+      btn.onclick=()=>{
+        const has=ev.who.includes(p);
+        if(has)ev.who=ev.who.filter(x=>x!==p);else ev.who.push(p);
+        refreshAll();
+        scheduleSave();
+      };
+      row.appendChild(btn);
+    });
+    body.appendChild(row);
+  });
+}
+
+function openPopup(evIdx){
+  popupEventIndex=evIdx;
+  const ev=DATA[currentDay][evIdx];
+  const conflictPersons=getConflictIndices(currentDay);
+  const evConflicts=conflictPersons[evIdx]||new Set();
+  document.getElementById('popupTitle').textContent=ev.name;
+  document.getElementById('popupSub').textContent=STAGE_LABELS[STAGES.indexOf(ev.stage)]+' · '+fmtTime(ev.start)+'–'+fmtTime(ev.end);
+  const pc=document.getElementById('popupConflict');
+  if(evConflicts.size>0){
+    pc.style.display='block';
+    pc.textContent='⚠ Konflikt for: '+[...evConflicts].join(', ');
+  } else pc.style.display='none';
+  const pp=document.getElementById('popupPeople');pp.innerHTML='';
+  PEOPLE.forEach((p,pi)=>{
+    const checked=ev.who.includes(p);
+    const isConflict=evConflicts.has(p);
+    const btn=document.createElement('div');
+    btn.className='popup-person'+(checked?' checked':' unchecked')+(isConflict?' conflict-person':'');
+    btn.style.cssText=`border-color:${COLORS[pi]};background:${checked?COLORS[pi]:'transparent'};color:${checked?'#fff':COLORS[pi]};`;
+    btn.textContent=p;
+    btn.title=isConflict?p+' har konflikt på dette tidspunkt':'';
+    btn.onclick=()=>{
+      const has=ev.who.includes(p);
+      if(has)ev.who=ev.who.filter(x=>x!==p);else ev.who.push(p);
+      refreshAll();
+      scheduleSave();
+      openPopup(evIdx);
+    };
+    pp.appendChild(btn);
+  });
+  document.getElementById('popupOverlay').style.display='flex';
+}
+function closePopup(e){if(e.target===document.getElementById('popupOverlay'))closePopupDirect();}
+function closePopupDirect(){document.getElementById('popupOverlay').style.display='none';popupEventIndex=null;}
+
+document.getElementById('cv').addEventListener('click',function(e){
+  const rect=this.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  for(const h of hitBoxes){if(mx>=h.x&&mx<=h.x+h.w&&my>=h.y&&my<=h.y+h.h){openPopup(h.idx);return;}}
+});
+document.getElementById('cv').style.cursor='pointer';
+
+function refreshAll(){
+  updateConflictBanner();
+  if(editorOpen)buildEditor();
+  render();
+}
+
+function buildSegments(person,data,minT,maxT){
+  const shows=data.filter(e=>e.who.includes(person)).sort((a,b)=>a.start-b.start);
+  const segs=[];let cur=minT;
+  for(const s of shows){
+    if(s.start>cur+0.04)segs.push({type:'pause',start:cur,end:s.start});
+    segs.push({type:'show',start:s.start,end:s.end,stage:s.stage});
+    cur=Math.max(cur,s.end);
+  }
+  if(cur<maxT)segs.push({type:'pause',start:cur,end:maxT});
+  return segs;
+}
+function segCX(seg){return seg.type==='pause'?pauseCX():stageCX(STAGES.indexOf(seg.stage));}
+
+function drawPersonPath(ctx,person,data,minT,maxT,color,offset,conflictTimes){
+  const segs=buildSegments(person,data,minT,maxT);
+  if(!segs.length)return;
+  ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.lineCap='round';
+  for(let i=0;i<segs.length;i++){
+    const seg=segs[i];
+    const x=segCX(seg)+offset;
+    const y1=tY(seg.start,minT),y2=tY(seg.end,minT);
+    ctx.globalAlpha=seg.type==='pause'?0.28:0.88;
+    ctx.setLineDash(seg.type==='pause'?[4,3]:[]);
+    ctx.beginPath();ctx.moveTo(x,y1);ctx.lineTo(x,y2);ctx.stroke();
+    ctx.setLineDash([]);ctx.globalAlpha=1;
+    if(i<segs.length-1){
+      const next=segs[i+1],x2=segCX(next)+offset,cy=tY(seg.end,minT);
+      if(Math.abs(x2-x)>2){
+        ctx.globalAlpha=0.65;ctx.beginPath();ctx.moveTo(x,cy);ctx.lineTo(x2,cy);ctx.stroke();ctx.globalAlpha=1;
+      }
+    }
+  }
+  segs.filter(s=>s.type==='show').forEach(seg=>{
+    const x=segCX(seg)+offset,y=tY(seg.start,minT);
+    const isConflict=conflictTimes&&conflictTimes.some(ct=>Math.abs(ct-seg.start)<0.01||(seg.start<ct&&seg.end>ct+0.01));
+    ctx.globalAlpha=1;
+    if(isConflict){
+      ctx.strokeStyle='#E24B4A';ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.stroke();
+      ctx.fillStyle='#E24B4A';ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,1.8,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle=color;ctx.lineWidth=2.5;
+    } else {
+      ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();
+    }
+  });
+}
+
+function wrapText(ctx,text,maxW){
+  const words=text.split(' '),lines=[];let line='';
+  for(const w of words){const t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){lines.push(line);line=w;}else line=t;}
+  if(line)lines.push(line);return lines;
+}
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+function render(){
+  const data=DATA[currentDay];
+  const minT=currentDay==='fri'?14:11, maxT=24;
+  const totalMins=(maxT-minT)*60;
+  const canvasH=HDR_H+totalMins*PPM+8, canvasW=totalW();
+  const dpr=window.devicePixelRatio||1;
+  const cv=document.getElementById('cv');
+  cv.width=canvasW*dpr;cv.height=canvasH*dpr;
+  cv.style.width=canvasW+'px';cv.style.height=canvasH+'px';
+  const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+  const isDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const bgColor=isDark?'#1a1a1a':'#ffffff';
+  const gridColor=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.07)';
+  const textMuted=isDark?'rgba(255,255,255,0.4)':'rgba(0,0,0,0.4)';
+  ctx.fillStyle=bgColor;ctx.fillRect(0,0,canvasW,canvasH);
+  [...STAGES,'pause'].forEach((s,i)=>{
+    const x=i<4?stageX(i):pauseX(),w=i<4?STAGE_W:PAUSE_W;
+    const col=i<4?STAGE_COLORS[s]:STAGE_COLORS.pause;
+    ctx.fillStyle=col.hdr;roundRect(ctx,x,0,w,HDR_H-4,5);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='500 10px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(i<4?STAGE_LABELS[i]:'Pause',x+w/2,HDR_H/2-2,w-6);
+  });
+  for(let h=minT;h<=maxT;h++){
+    const y=tY(h,minT);
+    ctx.strokeStyle=gridColor;ctx.lineWidth=0.5;ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(TIME_W,y);ctx.lineTo(canvasW,y);ctx.stroke();
+    ctx.fillStyle=textMuted;ctx.font='10px sans-serif';ctx.textAlign='right';ctx.textBaseline='middle';
+    ctx.fillText(h<24?h+':00':'00:00',TIME_W-4,y);
+  }
+  const conflictPersons=getConflictIndices(currentDay);
+  hitBoxes=[];
+  const stageMap={};STAGES.forEach(s=>stageMap[s]=data.filter(e=>e.stage===s));
+  STAGES.forEach((stage,si)=>{
+    const x=stageX(si),col=STAGE_COLORS[stage];
+    stageMap[stage].forEach(ev=>{
+      const evIdx=data.indexOf(ev);
+      const y=tY(ev.start,minT)+1;
+      const h=Math.max((ev.end-ev.start)*60*PPM-2,14);
+      const relevant=ev.who.filter(p=>activePersons.has(p));
+      const dim=ev.who.length>0&&!relevant.length;
+      const evConflicts=conflictPersons[evIdx]||new Set();
+      const hasVisibleConflict=[...evConflicts].some(p=>activePersons.has(p));
+      ctx.globalAlpha=dim?0.15:1;
+      if(hasVisibleConflict&&!dim){
+        ctx.fillStyle='#FCEBEB';roundRect(ctx,x,y,STAGE_W,h,4);ctx.fill();
+        ctx.strokeStyle='#E24B4A';ctx.lineWidth=1.5;roundRect(ctx,x,y,STAGE_W,h,4);ctx.stroke();
+        ctx.fillStyle='#E24B4A';roundRect(ctx,x,y,3,h,2);ctx.fill();
+      } else {
+        ctx.fillStyle=col.fill;roundRect(ctx,x,y,STAGE_W,h,4);ctx.fill();
+        ctx.strokeStyle=col.stroke;ctx.lineWidth=0.5;roundRect(ctx,x,y,STAGE_W,h,4);ctx.stroke();
+      }
+      ctx.fillStyle=hasVisibleConflict&&!dim?'#E24B4A':col.text;
+      ctx.globalAlpha=dim?0.15:0.3;
+      ctx.font='9px sans-serif';ctx.textAlign='right';ctx.textBaseline='top';
+      ctx.fillText('✎',x+STAGE_W-3,y+2);
+      if(hasVisibleConflict&&!dim){
+        ctx.globalAlpha=1;ctx.fillStyle='#E24B4A';
+        ctx.font='bold 10px sans-serif';ctx.textAlign='left';ctx.textBaseline='top';
+        ctx.fillText('⚠',x+5,y+2);
+      }
+      ctx.globalAlpha=dim?0.15:1;
+      ctx.fillStyle=hasVisibleConflict&&!dim?'#A32D2D':col.text;
+      ctx.font='500 9px sans-serif';ctx.textAlign='left';ctx.textBaseline='top';
+      const lines=wrapText(ctx,ev.name,STAGE_W-18);
+      const maxL=Math.floor((h-4)/11);
+      const textX=hasVisibleConflict&&!dim?x+16:x+4;
+      lines.slice(0,Math.max(1,maxL)).forEach((l,li)=>ctx.fillText(l,textX,y+3+li*11,STAGE_W-20));
+      ctx.globalAlpha=1;
+      hitBoxes.push({x,y,w:STAGE_W,h,idx:evIdx});
+    });
+  });
+  ctx.fillStyle=isDark?'rgba(255,255,255,0.03)':'rgba(0,0,0,0.02)';
+  ctx.fillRect(pauseX(),HDR_H,PAUSE_W,totalMins*PPM);
+  const visiblePersons=PEOPLE.filter(p=>activePersons.has(p));
+  const n=visiblePersons.length;
+  const maxSpread=Math.min(20,STAGE_W*0.35);
+  const conflicts=getConflicts(currentDay);
+  visiblePersons.forEach((p,pi)=>{
+    const idx=PEOPLE.indexOf(p);
+    const offset=n<=1?0:(pi/(n-1)-0.5)*maxSpread*2;
+    const personConflicts=conflicts[p]||[];
+    const conflictTimes=personConflicts.flatMap(({a,b})=>[a.start,b.start]);
+    drawPersonPath(ctx,p,data,minT,maxT,COLORS[idx],offset,conflictTimes);
+  });
+  updateConflictBanner();
+}
+
+buildFilters();
+render();
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',render);
+</script>
+</body>
+</html>
