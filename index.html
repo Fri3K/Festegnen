@@ -128,9 +128,10 @@ const GH_API=`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`;
 let saveTimeout=null, fileSha=null;
 
 function setDriveStatus(html,showSave,showLogin){
-  document.getElementById('driveStatus').innerHTML=html;
-  document.getElementById('driveSaveBtn').style.display=showSave?'':'none';
-  document.getElementById('driveLoginBtn').style.display=showLogin?'':'none';
+  const s=document.getElementById('driveStatus');
+  const sb=document.getElementById('driveSaveBtn');
+  if(s)s.innerHTML=html;
+  if(sb)sb.style.display=showSave?'':'none';
 }
 
 function ghHeaders(){
