@@ -802,8 +802,10 @@ function renderToOffscreenCanvas(day, scale, isDark){
   const minT=day==='fri'?14:11, maxT=24;
   const totalMins=(maxT-minT)*60;
   const canvasH=HDR_H+totalMins*PPM+8, canvasW=totalW();
+  const visiblePersons=PEOPLE.filter(p=>activePersons.has(p));
+  const legendH=visiblePersons.length>0?18:0;
   const oc=document.createElement('canvas');
-  oc.width=canvasW*scale; oc.height=canvasH*scale;
+  oc.width=canvasW*scale; oc.height=(canvasH+legendH)*scale;
   const ctx=oc.getContext('2d'); ctx.scale(scale,scale);
   const bgColor=isDark?'#1a1a1a':'#ffffff';
   ctx.fillStyle=bgColor; ctx.fillRect(0,0,canvasW,canvasH);
@@ -870,7 +872,6 @@ function renderToOffscreenCanvas(day, scale, isDark){
   });
   ctx.fillStyle=isDark?'rgba(255,255,255,0.03)':'rgba(0,0,0,0.02)';
   ctx.fillRect(pauseX(),HDR_H,PAUSE_W,totalMins*PPM);
-  const visiblePersons=PEOPLE.filter(p=>activePersons.has(p));
   const n=visiblePersons.length;
   const maxSpread=Math.min(20,STAGE_W*0.35);
   const conflicts=getConflicts(day);
@@ -881,7 +882,30 @@ function renderToOffscreenCanvas(day, scale, isDark){
     const conflictTimes=personConflicts.flatMap(({a,b})=>[a.start,b.start]);
     drawPersonPath(ctx,p,data,minT,maxT,COLORS[idx],offset,conflictTimes);
   });
-  return {canvas:oc, logicalW:canvasW, logicalH:canvasH};
+
+  // Navne-legende under tidslinjen
+  if(visiblePersons.length>0){
+    const legendY=canvasH-6;
+    const dotR=4;
+    ctx.font='500 9px sans-serif';
+    ctx.textBaseline='middle';
+    // Mål alle navne og fordel dem
+    const items=visiblePersons.map(p=>({p,idx:PEOPLE.indexOf(p),w:ctx.measureText(p).width}));
+    const itemW=dotR*2+4; // dot + gap
+    const totalItemW=items.reduce((s,it)=>s+it.w+itemW+10,0)-10;
+    let lx=Math.max(TIME_W,(canvasW-totalItemW)/2);
+    items.forEach(({p,idx,w})=>{
+      const color=COLORS[idx];
+      ctx.fillStyle=color;
+      ctx.beginPath();ctx.arc(lx+dotR,legendY,dotR,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=isDark?'rgba(255,255,255,0.85)':'rgba(0,0,0,0.75)';
+      ctx.textAlign='left';
+      ctx.fillText(p,lx+dotR*2+4,legendY);
+      lx+=dotR*2+4+w+10;
+    });
+  }
+
+  return {canvas:oc, logicalW:canvasW, logicalH:canvasH+legendH};
 }
 
 async function downloadPDF(){
