@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Festegnen 2026 – Tidslinje</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -56,6 +57,16 @@ body{font-family:var(--font-sans,system-ui,sans-serif);}
 .popup-person.unchecked{background:transparent;}
 .popup-person.conflict-person::after{content:'⚠';position:absolute;top:-6px;right:-4px;font-size:10px;}
 .popup-close{width:100%;padding:7px;border-radius:8px;border:0.5px solid #ccc;background:#f5f5f5;cursor:pointer;font-size:13px;color:#222;}
+.popup-title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px;}
+.popup-link{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;border:1px solid #1DB954;color:#1DB954;background:#f0faf3;font-size:11px;font-weight:500;text-decoration:none;white-space:nowrap;flex-shrink:0;}
+.popup-link:hover{background:#1DB954;color:#fff;}
+.popup-link.web-link{border-color:#185FA5;color:#185FA5;background:#f0f6ff;}
+.popup-link.web-link:hover{background:#185FA5;color:#fff;}
+
+/* PDF knap */
+#pdfBtn{padding:6px 14px;border-radius:8px;border:0.5px solid #D85A30;background:#D85A30;color:#fff;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap;display:flex;align-items:center;gap:5px;}
+#pdfBtn:hover{background:#c04a20;}
+#pdfBtn:disabled{opacity:0.6;cursor:wait;}
 
 /* Drive status bar */
 #driveBar{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f0f6ff;border:0.5px solid #c5d9f5;border-radius:8px;margin-bottom:.75rem;font-size:11px;color:#1a56a0;flex-wrap:wrap;}
@@ -83,6 +94,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);}
 <div class="top-row">
   <div class="person-filters" id="pfilters"></div>
   <button class="edit-toggle" id="editToggle" onclick="toggleEditor()">✏ Rediger valg</button>
+  <button id="pdfBtn" onclick="downloadPDF()">⬇ Download PDF</button>
 </div>
 <div class="legend">
   <span class="leg-item"><span class="leg-dot" style="background:#D85A30"></span>Live Stage</span>
@@ -111,7 +123,10 @@ body{font-family:var(--font-sans,system-ui,sans-serif);}
 
 <div class="popup-overlay" id="popupOverlay" style="display:none;" onclick="closePopup(event)">
   <div class="popup" id="popupBox">
-    <div class="popup-title" id="popupTitle"></div>
+    <div class="popup-title-row">
+      <div class="popup-title" id="popupTitle"></div>
+      <a id="popupLink" href="#" target="_blank" rel="noopener" style="display:none"></a>
+    </div>
     <div class="popup-sub" id="popupSub"></div>
     <div class="popup-conflict" id="popupConflict"></div>
     <div class="popup-people" id="popupPeople"></div>
@@ -474,12 +489,94 @@ function buildEditor(){
   });
 }
 
+const LINKS={
+  'Black Eyed Peas':'https://open.spotify.com/artist/1yxSLGMDHlW21z4YXirZDS?si=8KQWxQGgQ7SB428twK_uhQ',
+  'Infernal':'https://open.spotify.com/artist/2nnBn2iyqkuOBj85nhGp1k?si=As9mcw5CSH6uRxhZastDKQ',
+  'Ude af Kontrol':'https://open.spotify.com/artist/2ZbyyCS8KLKsuoNlxc76Ev?si=v4d3TPl4SD2DqjmJDnHXsA',
+  'Grand Prix Show':'https://vielsker.dk/grand-prix-show/',
+  'Paul Van Dyk':'https://open.spotify.com/artist/7wU1naftD3lNq7rNsiDvOR?si=9NxbjOpfSLanq0M8L_hK6g',
+  'ATB':'https://open.spotify.com/artist/7jZM5w05mGhw6wTB1okhD9?si=ajg2VXHIQp2qzknhNL_siA',
+  'Sigala':'https://open.spotify.com/artist/1IueXOQyABrMOprrzwQJWN?si=ZBnT2X9-RYqEVLv9DeRVSw',
+  'Jaxstyle':'https://open.spotify.com/artist/3G1KNyIiGISpRGVPWbst6P?si=TiDPHAUDSeSlqTF-LqCKQQ',
+  'Paul Elstak':'https://open.spotify.com/artist/123hDJRbi4KtCdBaaKNHW6?si=riV2SuU8RxCCHgeOzvMvZw',
+  'Vengaboys':'https://open.spotify.com/artist/0cwmNvclzPd8mQnoHuIksj?si=s6CCGa6ySQWMf1fsoNT5dA',
+  'Lasgo':'https://open.spotify.com/artist/25Kw8f1zcn9VtUk5Nl3qrp?si=v0-6Qov9T3qax6Eu30UD2w',
+  'Barcode Brothers':'https://open.spotify.com/artist/11lfQgLbVZRnR7tbtAnzhk?si=hpxEskqRTXSOnr6fx1915A',
+  'Sylver':'https://open.spotify.com/artist/1i9NxPRrKcoW34XTMnvzJy?si=JpJMznCqTW-k4U93Cr2y0w',
+  'Ian Van Dahl':'https://open.spotify.com/artist/27IuDZNaLuEtupD8QZftiZ?si=OyhgawN9TUOahPWWidLl2A',
+  'Dee Dee':'https://open.spotify.com/artist/6IdlUSa29eSvdn3yBAO1kg?si=RZeSvE3-QHWr8rUBMmyLww',
+  'Basshunter':'https://open.spotify.com/artist/37DdwREpvvQHmGLFEZ4h0Q?si=yIjsNew1RoSYW07IrziosQ',
+  'Outlandish':'https://open.spotify.com/artist/5tqMW5dSAlvh0GvgD3XfDy?si=85n0NWR-TEqrGfMLvWPMgA',
+  'Pede B':'https://open.spotify.com/artist/05X5qdeeGgBQe115bTNlWu?si=jLA6j5OWSP2eVqbW8h8lww',
+  'Dante Thomas':'https://open.spotify.com/artist/6ThKRSpihtIxggE89U0fRb?si=Ekb-XqdwS-aEF1gV6hFsZg',
+  'Danzel':'https://open.spotify.com/artist/0o2RZsw6cgJAO7e4N3x7dJ?si=huC5XksOTCaQ4oaeWvDFDQ',
+  'DJ Rosé':'https://www.mixcloud.com/kenny-jensen/',
+  'DJ Søren Haahr':'https://www.facebook.com/KaptajnHaahr/',
+  'DJ Skoge':'https://www.mixcloud.com/djskoge/',
+  'DJ Renter':'https://www.facebook.com/watch/?v=1279909263861630',
+  'Rasmus Bjerg':'https://open.spotify.com/artist/3zH5giTwRVntj4cnZWkF6A?si=Ey9rqaYoRH2W_QGIHctjxA',
+  'Harske Hubbi':'https://open.spotify.com/artist/3SVmGjgvd1ArBbglkhiiiB?si=DJGyibt8QWqiUYnTQldijw',
+  'Christian Brøns':'https://open.spotify.com/artist/4sEkY4bx8a0KM6yfBUaSeG?si=c-kNYnymRt-hWV5iboy5UA',
+  'Jørgen De Mylius':'https://open.spotify.com/artist/7fqKD5rALqVi1lsgSioCz0?si=WbEP24ENQQqqEGRe5vJ1RQ',
+  'Faithless':'https://open.spotify.com/artist/5T4UKHhr4HGIC0VzdZQtAE?si=JcdZQ3C9SfGSOY1ErpMZnA',
+  'Scooter':'https://open.spotify.com/artist/0HlxL5hisLf59ETEPM3cUA?si=-iKBaFX5Rz6CW_dQ0-7eDA',
+  'John Martin':'https://open.spotify.com/artist/2auikkNYqigWStoHWK1Grq?si=qBpXjZ8JSuOnXSo3BMMvJg',
+  'Ankerstjerne':'https://open.spotify.com/artist/7JoViNQIqOIaxcBswboN5d?si=HxvwmNM4S16x_YsPXEziSw',
+  'Laidback Luke':'https://open.spotify.com/artist/53cQZtWDwDJwVCNZlfJ6Qk?si=z7DKupJORxOz30RZHs56NA',
+  'Faustix':'https://open.spotify.com/artist/6jPriOYMyUL9kNonBI1CNd?si=sJ1vk-qZQDePGJ7qZXIv4Q',
+  'Kato':'https://open.spotify.com/artist/1udruffum7CorOphFUMB9A?si=4fjfWY-hSL6G0a0d5c89Jg',
+  'Armand Van Helden':'https://open.spotify.com/artist/3cQA9WH8liZfeja1DxcDYE?si=GHBFwbtORMqHVAC0CUVUTg',
+  'Darude':'https://open.spotify.com/artist/0LhHRmSd1EYM5QdNeNnCoQ?si=Icy6QZ2UQ161nXsPNPNIlA',
+  'Cascada':'https://open.spotify.com/artist/0N0d3kjwdY2h7UVuTdJGfp?si=osDuKYsmQ0S342zUtAAmnA',
+  'Sophie Ellis-Bextor':'https://open.spotify.com/artist/2cBh5lVMg222FFuRU7EfDE?si=Q7zZbPePQEWX_KU-NTIkxw',
+  'Natalie Imbruglia':'https://open.spotify.com/artist/0dlOr0VIysztGWvU1dpjmP?si=rYcAcMA5Sp2Hl1VFZKv9xA',
+  'Snow':'https://open.spotify.com/artist/3uZFBSsMiooimnprFL9jD1?si=oMKYHmxDT2iTiRYoCROuJg',
+  'Italobrothers':'https://open.spotify.com/artist/5nkYRuiIHg2xXHFC8bfosJ?si=OXsuaBdrS7CHrvQqXkyDPA',
+  'Giorgio Prezioso':'https://open.spotify.com/artist/0YAZy9DQwNFYhnzsHxryXv?si=z0mr0yZpTsmNp9tRAu_zJQ',
+  'O-Zone':'https://open.spotify.com/artist/5M5PjPSiKeXynM6Ohu350r?si=wNtpsn6dRXqgqTlgMEmABg',
+  'Svenstrup & Vendelboe + DJ Encore & Nadia Malm':'https://vielsker.dk/svenstrup-vendelboe-x-dj-encore-feat-nadia-malm/',
+  'Østkyst Hustlers':'https://open.spotify.com/artist/12vUJAJSACZF9nl7iiuqTB?si=lsmwQ9JVQUyprn9vF9dVjQ',
+  'Daisy Dee – Technotronic':'https://open.spotify.com/artist/2rYZvzfxqxAGzNBWjxRxqo?si=W0lVVmjnS9yNqBabQDCftg',
+  '8Ball':'https://open.spotify.com/artist/6g2VFISr826urqgxtD0uXX?si=_QkGslYIQAKzYilmWhrW2A',
+  'Loona':'https://open.spotify.com/artist/7ugN9bU7x54gVI2295brJF?si=a7R4pqw2S0CmsqjHAh7VpQ',
+  'Snap!':'https://open.spotify.com/artist/2FrKQPjJe4pVMZOgm0ESOx?si=E0OiF7wbTTqGB5hUKWGtUw',
+  'Mr. President':'https://open.spotify.com/artist/7KBkgunlONG7LPxs93pgpp?si=H_BzChofRKeYiyPA04-D3Q',
+  'Dario Von Slutty':'https://open.spotify.com/artist/0LTE9Msc6ZOPbGclKsL8cA?si=qUpcRMB7R5SRgyP-jS2A5w',
+  'Blå Øjne & Drömhus':'https://vielsker.dk/dromhus-blaa-oejne/',
+  'DJ 4Gaard':'https://www.mixcloud.com/4Gaard/uploads/',
+  'Ekspressen':'https://open.spotify.com/artist/6iEtDs1Kp1FvrLlKTZ1BvS?si=nDOnRnyrRuK8dRlaYyY6eg',
+  'Clemens':'https://open.spotify.com/artist/6M4RgHnN6u48xM8rbTintP?si=mtOHqhNiRmaj_C6mHYIoRw',
+  'Hampenberg, Alexander Brown & Yepha':'https://open.spotify.com/album/7IFua4EzhNfa6iSufp4zGW?si=Qc-QrsskRUO_VEdEhjvNXw',
+};
+
+function getLinkForEvent(name){
+  if(LINKS[name])return LINKS[name];
+  // Fuzzy: find key der starter med eller indeholder kunstnernavnet
+  for(const k of Object.keys(LINKS)){
+    if(name.startsWith(k)||k.startsWith(name))return LINKS[k];
+  }
+  return null;
+}
+
+function isSpotifyLink(url){return url&&url.includes('spotify.com');}
+
 function openPopup(evIdx){
   popupEventIndex=evIdx;
   const ev=DATA[currentDay][evIdx];
   const conflictPersons=getConflictIndices(currentDay);
   const evConflicts=conflictPersons[evIdx]||new Set();
   document.getElementById('popupTitle').textContent=ev.name;
+  const linkEl=document.getElementById('popupLink');
+  const url=getLinkForEvent(ev.name);
+  if(url){
+    const isSpotify=isSpotifyLink(url);
+    linkEl.href=url;
+    linkEl.className='popup-link'+(isSpotify?'':' web-link');
+    linkEl.innerHTML=isSpotify?'<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg> Spotify':'🔗 Link';
+    linkEl.style.display='';
+  } else {
+    linkEl.style.display='none';
+  }
   document.getElementById('popupSub').textContent=STAGE_LABELS[STAGES.indexOf(ev.stage)]+' · '+fmtTime(ev.start)+'–'+fmtTime(ev.end);
   const pc=document.getElementById('popupConflict');
   if(evConflicts.size>0){
@@ -675,6 +772,143 @@ function render(){
     drawPersonPath(ctx,p,data,minT,maxT,COLORS[idx],offset,conflictTimes);
   });
   updateConflictBanner();
+}
+
+function renderToOffscreenCanvas(day, scale){
+  // Tegner tidslinjen på en separat off-screen canvas i vilkårlig opløsning
+  const data=DATA[day];
+  const minT=day==='fri'?14:11, maxT=24;
+  const totalMins=(maxT-minT)*60;
+  const canvasH=HDR_H+totalMins*PPM+8, canvasW=totalW();
+  const oc=document.createElement('canvas');
+  oc.width=canvasW*scale; oc.height=canvasH*scale;
+  const ctx=oc.getContext('2d'); ctx.scale(scale,scale);
+  // Brug altid lys baggrund i PDF
+  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,canvasW,canvasH);
+  const gridColor='rgba(0,0,0,0.07)', textMuted='rgba(0,0,0,0.4)';
+  const headerCols=[
+    {x:stageX(0),w:STAGE_W,col:STAGE_COLORS.live,label:STAGE_LABELS[0]},
+    {x:stageX(1),w:STAGE_W,col:STAGE_COLORS.dj360,label:STAGE_LABELS[1]},
+    {x:pauseX(),w:PAUSE_W,col:STAGE_COLORS.pause,label:'Pause'},
+    {x:stageX(2),w:STAGE_W,col:STAGE_COLORS.viel,label:STAGE_LABELS[2]},
+    {x:stageX(3),w:STAGE_W,col:STAGE_COLORS.bodega,label:STAGE_LABELS[3]},
+  ];
+  headerCols.forEach(({x,w,col,label})=>{
+    ctx.fillStyle=col.hdr; roundRect(ctx,x,0,w,HDR_H-4,5); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='500 10px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(label,x+w/2,HDR_H/2-2,w-6);
+  });
+  for(let h=minT;h<=maxT;h++){
+    const y=tY(h,minT);
+    ctx.strokeStyle=gridColor; ctx.lineWidth=0.5; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(TIME_W,y); ctx.lineTo(canvasW,y); ctx.stroke();
+    ctx.fillStyle=textMuted; ctx.font='10px sans-serif'; ctx.textAlign='right'; ctx.textBaseline='middle';
+    ctx.fillText(h<24?h+':00':'00:00',TIME_W-4,y);
+  }
+  const conflictPersons=getConflictIndices(day);
+  const stageMap={}; STAGES.forEach(s=>stageMap[s]=data.filter(e=>e.stage===s));
+  STAGES.forEach((stage,si)=>{
+    const x=stageX(si), col=STAGE_COLORS[stage];
+    stageMap[stage].forEach(ev=>{
+      const evIdx=data.indexOf(ev);
+      const y=tY(ev.start,minT)+1;
+      const h=Math.max((ev.end-ev.start)*60*PPM-2,14);
+      const relevant=ev.who.filter(p=>activePersons.has(p));
+      const dim=ev.who.length>0&&!relevant.length;
+      const evConflicts=conflictPersons[evIdx]||new Set();
+      const hasVisibleConflict=[...evConflicts].some(p=>activePersons.has(p));
+      ctx.globalAlpha=dim?0.15:1;
+      if(hasVisibleConflict&&!dim){
+        ctx.fillStyle='#FCEBEB'; roundRect(ctx,x,y,STAGE_W,h,4); ctx.fill();
+        ctx.strokeStyle='#E24B4A'; ctx.lineWidth=1.5; roundRect(ctx,x,y,STAGE_W,h,4); ctx.stroke();
+        ctx.fillStyle='#E24B4A'; roundRect(ctx,x,y,3,h,2); ctx.fill();
+      } else {
+        ctx.fillStyle=col.fill; roundRect(ctx,x,y,STAGE_W,h,4); ctx.fill();
+        ctx.strokeStyle=col.stroke; ctx.lineWidth=0.5; roundRect(ctx,x,y,STAGE_W,h,4); ctx.stroke();
+      }
+      ctx.fillStyle=hasVisibleConflict&&!dim?'#E24B4A':col.text;
+      ctx.globalAlpha=dim?0.15:0.3;
+      ctx.font='9px sans-serif'; ctx.textAlign='right'; ctx.textBaseline='top';
+      ctx.fillText('✎',x+STAGE_W-3,y+2);
+      if(hasVisibleConflict&&!dim){
+        ctx.globalAlpha=1; ctx.fillStyle='#E24B4A';
+        ctx.font='bold 10px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='top';
+        ctx.fillText('⚠',x+5,y+2);
+      }
+      ctx.globalAlpha=dim?0.15:1;
+      ctx.fillStyle=hasVisibleConflict&&!dim?'#A32D2D':col.text;
+      ctx.font='500 9px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='top';
+      const lines=wrapText(ctx,ev.name,STAGE_W-18);
+      const maxL=Math.floor((h-4)/11);
+      const textX=hasVisibleConflict&&!dim?x+16:x+4;
+      lines.slice(0,Math.max(1,maxL)).forEach((l,li)=>ctx.fillText(l,textX,y+3+li*11,STAGE_W-20));
+      ctx.globalAlpha=1;
+    });
+  });
+  ctx.fillStyle='rgba(0,0,0,0.02)';
+  ctx.fillRect(pauseX(),HDR_H,PAUSE_W,totalMins*PPM);
+  const visiblePersons=PEOPLE.filter(p=>activePersons.has(p));
+  const n=visiblePersons.length;
+  const maxSpread=Math.min(20,STAGE_W*0.35);
+  const conflicts=getConflicts(day);
+  visiblePersons.forEach((p,pi)=>{
+    const idx=PEOPLE.indexOf(p);
+    const offset=n<=1?0:(pi/(n-1)-0.5)*maxSpread*2;
+    const personConflicts=conflicts[p]||[];
+    const conflictTimes=personConflicts.flatMap(({a,b})=>[a.start,b.start]);
+    drawPersonPath(ctx,p,data,minT,maxT,COLORS[idx],offset,conflictTimes);
+  });
+  return {canvas:oc, logicalW:canvasW, logicalH:canvasH};
+}
+
+async function downloadPDF(){
+  const btn=document.getElementById('pdfBtn');
+  btn.disabled=true;
+  btn.textContent='⏳ Genererer…';
+
+  const {jsPDF}=window.jspdf;
+  const days=['fri','sat'];
+  const dayLabels={'fri':'Fredag 19. juni','sat':'Lørdag 20. juni'};
+  const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const pageW=210, pageH=297, margin=10;
+  const PDF_SCALE=4; // 4× opløsning → skarp tekst i PDF
+
+  for(let di=0;di<days.length;di++){
+    const day=days[di];
+    await new Promise(r=>setTimeout(r,20));
+
+    const {canvas:oc, logicalW, logicalH}=renderToOffscreenCanvas(day, PDF_SCALE);
+    const imgData=oc.toDataURL('image/png');
+
+    if(di>0)pdf.addPage();
+
+    // Titel
+    pdf.setFont('helvetica','bold');
+    pdf.setFontSize(13);
+    pdf.setTextColor(24,95,165);
+    pdf.text('Festegnen 2026 – '+dayLabels[day], margin, margin+5);
+
+    // Beregn skalering så tidslinjen passer på siden
+    const maxImgW=pageW-margin*2;
+    const maxImgH=pageH-margin*2-12;
+    const scale=Math.min(maxImgW/logicalW, maxImgH/logicalH);
+    const imgW=logicalW*scale, imgH=logicalH*scale;
+    const imgX=margin+(maxImgW-imgW)/2;
+    const imgY=margin+10;
+
+    pdf.addImage(imgData,'PNG',imgX,imgY,imgW,imgH,undefined,'FAST');
+
+    // Sidefod
+    pdf.setFont('helvetica','normal');
+    pdf.setFontSize(7);
+    pdf.setTextColor(150,150,150);
+    pdf.text('Genereret '+new Date().toLocaleDateString('da-DK'),margin,pageH-5);
+    pdf.text('Side '+(di+1)+'/'+days.length,pageW-margin,pageH-5,'right');
+  }
+
+  pdf.save('Festegnen-2026-tidslinje.pdf');
+  btn.disabled=false;
+  btn.innerHTML='⬇ Download PDF';
 }
 
 buildFilters();
