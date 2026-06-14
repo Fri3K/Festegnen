@@ -9,69 +9,87 @@
 <body>
 
 <style>
+:root{
+  --bg:#fff;--bg2:#f8f8f8;--bg3:#f5f5f5;--border:#ddd;--border2:#ccc;
+  --text:#222;--text2:#555;--text3:#777;
+  --drive-bg:#f0f6ff;--drive-border:#c5d9f5;--drive-text:#1a56a0;
+  --conflict-bg:#FEF3E2;--conflict-border:#F5A623;--conflict-text:#BA7517;
+  --editor-row-border:#eee;--conflict-row-bg:rgba(186,115,23,0.07);
+  --popup-bg:#fff;--popup-border:#ccc;
+}
+[data-theme="dark"]{
+  --bg:#121212;--bg2:#1e1e1e;--bg3:#2a2a2a;--border:#333;--border2:#444;
+  --text:#e8e8e8;--text2:#aaa;--text3:#777;
+  --drive-bg:#1a2436;--drive-border:#2a4060;--drive-text:#7ab3e0;
+  --conflict-bg:#2a1e08;--conflict-border:#7a5010;--conflict-text:#f0a030;
+  --editor-row-border:#2a2a2a;--conflict-row-bg:rgba(240,160,48,0.08);
+  --popup-bg:#1e1e1e;--popup-border:#3a3a3a;
+}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:var(--font-sans,system-ui,sans-serif);}
+body{font-family:var(--font-sans,system-ui,sans-serif);background:var(--bg);color:var(--text);transition:background .2s,color .2s;}
 .wrap{padding:1rem 0;}
 .day-tabs{display:flex;gap:8px;margin-bottom:1rem;}
-.day-tab{padding:7px 18px;border:0.5px solid #ccc;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:#555;background:#fff;}
+.day-tab{padding:7px 18px;border:0.5px solid var(--border2);border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);background:var(--bg);}
 .day-tab.active{background:#185FA5;color:#E6F1FB;border-color:#185FA5;}
 .top-row{display:flex;gap:12px;align-items:center;margin-bottom:1rem;flex-wrap:wrap;}
 .person-filters{display:flex;flex-wrap:wrap;gap:6px;flex:1;}
-.person-btn{padding:4px 12px;border-radius:20px;border:1.5px solid #ccc;cursor:pointer;font-size:12px;background:#fff;color:#555;}
+.person-btn{padding:4px 12px;border-radius:20px;border:1.5px solid var(--border2);cursor:pointer;font-size:12px;background:var(--bg);color:var(--text2);}
 .person-btn.on{color:#fff;}
-.edit-toggle{padding:6px 14px;border-radius:8px;border:0.5px solid #ccc;cursor:pointer;font-size:12px;font-weight:500;background:#f5f5f5;color:#555;white-space:nowrap;}
+.edit-toggle{padding:6px 14px;border-radius:8px;border:0.5px solid var(--border2);cursor:pointer;font-size:12px;font-weight:500;background:var(--bg3);color:var(--text2);white-space:nowrap;}
 .edit-toggle.active{background:#185FA5;color:#fff;border-color:#185FA5;}
-.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:.5rem;font-size:11px;color:#777;}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:.5rem;font-size:11px;color:var(--text3);}
 .leg-item{display:flex;align-items:center;gap:4px;}
 .leg-dot{width:9px;height:9px;border-radius:2px;}
-.tl-hint{font-size:11px;color:#777;margin-bottom:.5rem;}
-.conflict-banner{margin-bottom:.75rem;background:#FEF3E2;border:0.5px solid #F5A623;border-radius:8px;padding:.6rem .85rem;display:none;}
-.conflict-banner h4{font-size:12px;font-weight:500;color:#BA7517;margin-bottom:.35rem;}
-.conflict-item{font-size:11px;color:#BA7517;padding:2px 0;display:flex;align-items:flex-start;gap:6px;}
+.tl-hint{font-size:11px;color:var(--text3);margin-bottom:.5rem;}
+.conflict-banner{margin-bottom:.75rem;background:var(--conflict-bg);border:0.5px solid var(--conflict-border);border-radius:8px;padding:.6rem .85rem;display:none;}
+.conflict-banner h4{font-size:12px;font-weight:500;color:var(--conflict-text);margin-bottom:.35rem;}
+.conflict-item{font-size:11px;color:var(--conflict-text);padding:2px 0;display:flex;align-items:flex-start;gap:6px;}
 .conflict-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:2px;}
 .tl-outer{overflow-x:auto;}
-.editor{margin-top:1.25rem;border:0.5px solid #ddd;border-radius:10px;overflow:hidden;}
-.editor-header{padding:.75rem 1rem;background:#f8f8f8;border-bottom:0.5px solid #ddd;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
-.editor-header h3{font-size:13px;font-weight:500;color:#222;}
+.editor{margin-top:1.25rem;border:0.5px solid var(--border);border-radius:10px;overflow:hidden;}
+.editor-header{padding:.75rem 1rem;background:var(--bg2);border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.editor-header h3{font-size:13px;font-weight:500;color:var(--text);}
 .editor-stage-tabs{display:flex;gap:6px;flex-wrap:wrap;}
-.est{padding:4px 10px;border-radius:8px;border:0.5px solid #ccc;cursor:pointer;font-size:11px;font-weight:500;background:#fff;color:#555;}
+.est{padding:4px 10px;border-radius:8px;border:0.5px solid var(--border2);cursor:pointer;font-size:11px;font-weight:500;background:var(--bg);color:var(--text2);}
 .est.active{color:#fff;}
-.editor-body{padding:.75rem 1rem;max-height:340px;overflow-y:auto;}
-.artist-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:0.5px solid #eee;}
+.editor-body{padding:.75rem 1rem;max-height:340px;overflow-y:auto;background:var(--bg);}
+.artist-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:0.5px solid var(--editor-row-border);}
 .artist-row:last-child{border-bottom:none;}
-.artist-row.conflict-row{background:rgba(186,115,23,0.07);border-radius:4px;padding-left:4px;}
+.artist-row.conflict-row{background:var(--conflict-row-bg);border-radius:4px;padding-left:4px;}
 .conflict-icon{font-size:12px;flex-shrink:0;}
-.artist-name{font-size:12px;color:#222;flex:1;min-width:0;}
-.artist-time{font-size:11px;color:#777;white-space:nowrap;margin-right:2px;}
+.artist-name{font-size:12px;color:var(--text);flex:1;min-width:0;}
+.artist-time{font-size:11px;color:var(--text3);white-space:nowrap;margin-right:2px;}
 .person-check{width:20px;height:20px;border-radius:50%;border:1.5px solid;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;transition:background .12s;position:relative;}
 .person-check.checked{color:#fff;}
-.person-check.conflict-check::after{content:'';position:absolute;top:-3px;right:-3px;width:7px;height:7px;border-radius:50%;background:#E24B4A;border:1px solid #fff;}
-.popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center;}
-.popup{background:#fff;border-radius:10px;border:0.5px solid #ccc;padding:1.25rem;width:340px;max-width:92vw;}
-.popup-title{font-size:14px;font-weight:500;color:#222;margin-bottom:2px;}
-.popup-sub{font-size:11px;color:#777;margin-bottom:.75rem;}
-.popup-conflict{font-size:11px;color:#BA7517;background:#FEF3E2;border-radius:8px;padding:.4rem .6rem;margin-bottom:.85rem;display:none;}
+.person-check.conflict-check::after{content:'';position:absolute;top:-3px;right:-3px;width:7px;height:7px;border-radius:50%;background:#E24B4A;border:1px solid var(--bg);}
+.popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:flex;align-items:center;justify-content:center;}
+.popup{background:var(--popup-bg);border-radius:10px;border:0.5px solid var(--popup-border);padding:1.25rem;width:340px;max-width:92vw;}
+.popup-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.popup-sub{font-size:11px;color:var(--text3);margin-bottom:.75rem;}
+.popup-conflict{font-size:11px;color:var(--conflict-text);background:var(--conflict-bg);border-radius:8px;padding:.4rem .6rem;margin-bottom:.85rem;display:none;}
 .popup-people{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1.25rem;}
 .popup-person{padding:5px 12px;border-radius:20px;border:1.5px solid;cursor:pointer;font-size:12px;font-weight:500;position:relative;}
 .popup-person.checked{color:#fff;}
 .popup-person.unchecked{background:transparent;}
 .popup-person.conflict-person::after{content:'⚠';position:absolute;top:-6px;right:-4px;font-size:10px;}
-.popup-close{width:100%;padding:7px;border-radius:8px;border:0.5px solid #ccc;background:#f5f5f5;cursor:pointer;font-size:13px;color:#222;}
+.popup-close{width:100%;padding:7px;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg3);cursor:pointer;font-size:13px;color:var(--text);}
 .popup-title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px;}
-.popup-link{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;border:1px solid #1DB954;color:#1DB954;background:#f0faf3;font-size:11px;font-weight:500;text-decoration:none;white-space:nowrap;flex-shrink:0;}
+.popup-link{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;border:1px solid #1DB954;color:#1DB954;background:rgba(29,185,84,0.1);font-size:11px;font-weight:500;text-decoration:none;white-space:nowrap;flex-shrink:0;}
 .popup-link:hover{background:#1DB954;color:#fff;}
-.popup-link.web-link{border-color:#185FA5;color:#185FA5;background:#f0f6ff;}
+.popup-link.web-link{border-color:#185FA5;color:#185FA5;background:rgba(24,95,165,0.1);}
 .popup-link.web-link:hover{background:#185FA5;color:#fff;}
 
-/* PDF knap */
+/* PDF + dark toggle knapper */
 #pdfBtn{padding:6px 14px;border-radius:8px;border:0.5px solid #D85A30;background:#D85A30;color:#fff;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap;display:flex;align-items:center;gap:5px;}
 #pdfBtn:hover{background:#c04a20;}
 #pdfBtn:disabled{opacity:0.6;cursor:wait;}
+#darkBtn{padding:6px 10px;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:14px;line-height:1;flex-shrink:0;}
+#darkBtn:hover{background:var(--border);}
 
 /* Drive status bar */
-#driveBar{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f0f6ff;border:0.5px solid #c5d9f5;border-radius:8px;margin-bottom:.75rem;font-size:11px;color:#1a56a0;flex-wrap:wrap;}
+#driveBar{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--drive-bg);border:0.5px solid var(--drive-border);border-radius:8px;margin-bottom:.75rem;font-size:11px;color:var(--drive-text);flex-wrap:wrap;}
 #driveBar button{padding:3px 10px;border-radius:6px;border:0.5px solid #185FA5;background:#185FA5;color:#fff;cursor:pointer;font-size:11px;font-weight:500;}
-#driveBar button.secondary{background:#fff;color:#185FA5;}
+#driveBar button.secondary{background:transparent;color:var(--drive-text);border-color:var(--drive-border);}
 #driveStatus{flex:1;min-width:120px;}
 .dot-saving{display:inline-block;width:7px;height:7px;border-radius:50%;background:#f0a500;margin-right:4px;animation:pulse .8s infinite;}
 .dot-saved{display:inline-block;width:7px;height:7px;border-radius:50%;background:#1a9e5c;margin-right:4px;}
@@ -94,6 +112,7 @@ body{font-family:var(--font-sans,system-ui,sans-serif);}
 <div class="top-row">
   <div class="person-filters" id="pfilters"></div>
   <button class="edit-toggle" id="editToggle" onclick="toggleEditor()">✏ Rediger valg</button>
+  <button id="darkBtn" onclick="toggleDark()" title="Skift tema">🌙</button>
   <button id="pdfBtn" onclick="downloadPDF()">⬇ Download PDF</button>
 </div>
 <div class="legend">
@@ -248,12 +267,15 @@ window.addEventListener('load',()=>ghLoad());
 const PEOPLE=['Helene','Julie','Magnus','Mick','Nina','Sophia','Thea'];
 const COLORS=['#7F77DD','#1D9E75','#D85A30','#378ADD','#D4537E','#BA7517','#888780'];
 const STAGE_COLORS={
-  live:  {fill:'#FAECE7',stroke:'#F0997B',text:'#993C1D',hdr:'#D85A30'},
-  dj360: {fill:'#E6F1FB',stroke:'#85B7EB',text:'#185FA5',hdr:'#185FA5'},
-  viel:  {fill:'#FBEAF0',stroke:'#ED93B1',text:'#993556',hdr:'#D4537E'},
-  bodega:{fill:'#FAEEDA',stroke:'#EF9F27',text:'#854F0B',hdr:'#BA7517'},
+  live:  {fill:'#FAECE7',stroke:'#F0997B',text:'#993C1D',hdr:'#D85A30', darkFill:'#2d1a14',darkStroke:'#a04830',darkText:'#f09070'},
+  dj360: {fill:'#E6F1FB',stroke:'#85B7EB',text:'#185FA5',hdr:'#185FA5', darkFill:'#0f1e30',darkStroke:'#2a5a90',darkText:'#7ab3e0'},
+  viel:  {fill:'#FBEAF0',stroke:'#ED93B1',text:'#993556',hdr:'#D4537E', darkFill:'#2d1020',darkStroke:'#903060',darkText:'#e080a8'},
+  bodega:{fill:'#FAEEDA',stroke:'#EF9F27',text:'#854F0B',hdr:'#BA7517', darkFill:'#2a1e08',darkStroke:'#9a6510',darkText:'#e0a840'},
   pause: {hdr:'#888780'},
 };
+function stageCol(col, isDark){
+  return isDark ? {fill:col.darkFill,stroke:col.darkStroke,text:col.darkText,hdr:col.hdr} : col;
+}
 const STAGES=['live','dj360','viel','bodega'];
 const STAGE_LABELS=['Live Stage','360 DJ Stage','Vi Elsker Stage','Bodega Royal'];
 const TIME_W=52,STAGE_W=108,PAUSE_W=56,GAP=4,HDR_H=32,PPM=1.7;
@@ -691,7 +713,7 @@ function render(){
   cv.width=canvasW*dpr;cv.height=canvasH*dpr;
   cv.style.width=canvasW+'px';cv.style.height=canvasH+'px';
   const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
-  const isDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
   const bgColor=isDark?'#1a1a1a':'#ffffff';
   const gridColor=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.07)';
   const textMuted=isDark?'rgba(255,255,255,0.4)':'rgba(0,0,0,0.4)';
@@ -774,7 +796,7 @@ function render(){
   updateConflictBanner();
 }
 
-function renderToOffscreenCanvas(day, scale){
+function renderToOffscreenCanvas(day, scale, isDark){
   // Tegner tidslinjen på en separat off-screen canvas i vilkårlig opløsning
   const data=DATA[day];
   const minT=day==='fri'?14:11, maxT=24;
@@ -783,9 +805,10 @@ function renderToOffscreenCanvas(day, scale){
   const oc=document.createElement('canvas');
   oc.width=canvasW*scale; oc.height=canvasH*scale;
   const ctx=oc.getContext('2d'); ctx.scale(scale,scale);
-  // Brug altid lys baggrund i PDF
-  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,canvasW,canvasH);
-  const gridColor='rgba(0,0,0,0.07)', textMuted='rgba(0,0,0,0.4)';
+  const bgColor=isDark?'#1a1a1a':'#ffffff';
+  ctx.fillStyle=bgColor; ctx.fillRect(0,0,canvasW,canvasH);
+  const gridColor=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.07)';
+  const textMuted=isDark?'rgba(255,255,255,0.4)':'rgba(0,0,0,0.4)';
   const headerCols=[
     {x:stageX(0),w:STAGE_W,col:STAGE_COLORS.live,label:STAGE_LABELS[0]},
     {x:stageX(1),w:STAGE_W,col:STAGE_COLORS.dj360,label:STAGE_LABELS[1]},
@@ -808,7 +831,7 @@ function renderToOffscreenCanvas(day, scale){
   const conflictPersons=getConflictIndices(day);
   const stageMap={}; STAGES.forEach(s=>stageMap[s]=data.filter(e=>e.stage===s));
   STAGES.forEach((stage,si)=>{
-    const x=stageX(si), col=STAGE_COLORS[stage];
+    const x=stageX(si), col=stageCol(STAGE_COLORS[stage], isDark);
     stageMap[stage].forEach(ev=>{
       const evIdx=data.indexOf(ev);
       const y=tY(ev.start,minT)+1;
@@ -819,7 +842,7 @@ function renderToOffscreenCanvas(day, scale){
       const hasVisibleConflict=[...evConflicts].some(p=>activePersons.has(p));
       ctx.globalAlpha=dim?0.15:1;
       if(hasVisibleConflict&&!dim){
-        ctx.fillStyle='#FCEBEB'; roundRect(ctx,x,y,STAGE_W,h,4); ctx.fill();
+        ctx.fillStyle=isDark?'#3a1010':'#FCEBEB'; roundRect(ctx,x,y,STAGE_W,h,4); ctx.fill();
         ctx.strokeStyle='#E24B4A'; ctx.lineWidth=1.5; roundRect(ctx,x,y,STAGE_W,h,4); ctx.stroke();
         ctx.fillStyle='#E24B4A'; roundRect(ctx,x,y,3,h,2); ctx.fill();
       } else {
@@ -836,7 +859,7 @@ function renderToOffscreenCanvas(day, scale){
         ctx.fillText('⚠',x+5,y+2);
       }
       ctx.globalAlpha=dim?0.15:1;
-      ctx.fillStyle=hasVisibleConflict&&!dim?'#A32D2D':col.text;
+      ctx.fillStyle=hasVisibleConflict&&!dim?(isDark?'#ff8080':'#A32D2D'):col.text;
       ctx.font='500 9px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='top';
       const lines=wrapText(ctx,ev.name,STAGE_W-18);
       const maxL=Math.floor((h-4)/11);
@@ -845,7 +868,7 @@ function renderToOffscreenCanvas(day, scale){
       ctx.globalAlpha=1;
     });
   });
-  ctx.fillStyle='rgba(0,0,0,0.02)';
+  ctx.fillStyle=isDark?'rgba(255,255,255,0.03)':'rgba(0,0,0,0.02)';
   ctx.fillRect(pauseX(),HDR_H,PAUSE_W,totalMins*PPM);
   const visiblePersons=PEOPLE.filter(p=>activePersons.has(p));
   const n=visiblePersons.length;
@@ -867,25 +890,32 @@ async function downloadPDF(){
   btn.textContent='⏳ Genererer…';
 
   const {jsPDF}=window.jspdf;
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
   const days=['fri','sat'];
   const dayLabels={'fri':'Fredag 19. juni','sat':'Lørdag 20. juni'};
   const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   const pageW=210, pageH=297, margin=10;
-  const PDF_SCALE=4; // 4× opløsning → skarp tekst i PDF
+  const PDF_SCALE=4;
 
   for(let di=0;di<days.length;di++){
     const day=days[di];
     await new Promise(r=>setTimeout(r,20));
 
-    const {canvas:oc, logicalW, logicalH}=renderToOffscreenCanvas(day, PDF_SCALE);
+    const {canvas:oc, logicalW, logicalH}=renderToOffscreenCanvas(day, PDF_SCALE, isDark);
     const imgData=oc.toDataURL('image/png');
 
     if(di>0)pdf.addPage();
 
+    // Sidens baggrund i mørkt tema
+    if(isDark){
+      pdf.setFillColor(26,26,26);
+      pdf.rect(0,0,pageW,pageH,'F');
+    }
+
     // Titel
     pdf.setFont('helvetica','bold');
     pdf.setFontSize(13);
-    pdf.setTextColor(24,95,165);
+    isDark ? pdf.setTextColor(122,179,224) : pdf.setTextColor(24,95,165);
     pdf.text('Festegnen 2026 – '+dayLabels[day], margin, margin+5);
 
     // Beregn skalering så tidslinjen passer på siden
@@ -901,7 +931,7 @@ async function downloadPDF(){
     // Sidefod
     pdf.setFont('helvetica','normal');
     pdf.setFontSize(7);
-    pdf.setTextColor(150,150,150);
+    pdf.setTextColor(120,120,120);
     pdf.text('Genereret '+new Date().toLocaleDateString('da-DK'),margin,pageH-5);
     pdf.text('Side '+(di+1)+'/'+days.length,pageW-margin,pageH-5,'right');
   }
@@ -912,8 +942,21 @@ async function downloadPDF(){
 }
 
 buildFilters();
+
+// Dark mode
+let darkMode=localStorage.getItem('darkMode')==='1'||(localStorage.getItem('darkMode')===null&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme',darkMode?'dark':'light');
+  document.getElementById('darkBtn').textContent=darkMode?'☀️':'🌙';
+  render();
+}
+function toggleDark(){darkMode=!darkMode;localStorage.setItem('darkMode',darkMode?'1':'0');applyTheme();}
+applyTheme();
+
 render();
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',render);
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',e=>{
+  if(localStorage.getItem('darkMode')===null){darkMode=e.matches;applyTheme();}
+});
 </script>
 </body>
 </html>
